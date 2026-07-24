@@ -148,6 +148,7 @@ tables:
       # before the seam).
       - name: deduplicated
         type: boolean
+        label: apply to any cross-project aggregate
         description: >-
           Counts each tracked thing exactly once. A few repos and sites are
           recorded under more than one project id with duplicated values;
@@ -164,6 +165,7 @@ tables:
       # is needed; the one cross-project overlap is deduplicated's job.
       - name: site_traffic
         type: boolean
+        label: site-level rows, both collection eras
         description: >-
           Site-level website analytics rows across both collection eras.
           Use with traffic_metric so the eras aggregate under one metric
@@ -176,12 +178,14 @@ tables:
                OR metric LIKE 'daily_site_%')
       - name: page_traffic
         type: boolean
+        label: per-page rows, since 2026-03-02
         description: >-
           Per-page website analytics rows. Per-page data starts 2026-03-02;
           earlier page-level questions cannot be answered.
         expr: page IS NOT NULL
       - name: pre_seam
         type: boolean
+        label: before the 2026-06-23 collection seam
         description: >-
           Rows collected before the 2026-06-23 collection-system migration.
           Clamp issue-close and comment trend questions here; those series
@@ -189,6 +193,7 @@ tables:
         expr: date <= '2026-06-22'
       - name: traffic_metric
         type: string
+        label: canonical site-metric name across eras
         description: >-
           The canonical website metric name: maps the newer daily_site_*
           names onto daily_pageviews/daily_visitors/daily_visits so the two
@@ -224,6 +229,7 @@ tables:
             AND traffic_metric = 'daily_pageviews' AND deduplicated)
       - name: visitors
         type: number(quantity)
+        label: visitor-days, not distinct people
         description: >-
           Sum of DAILY unique visitors, site-level, both eras, deduplicated.
           Daily uniques do not deduplicate across days, so a range total
@@ -242,6 +248,7 @@ tables:
             AND traffic_metric = 'daily_visits' AND deduplicated)
       - name: stars_gained
         type: number(quantity)
+        label: unbounded = current star total
         description: >-
           GitHub stars gained (sum of daily_stars), deduplicated. With no
           date constraint this is the current star total. Star counts are
@@ -292,6 +299,7 @@ tables:
       # Same duplicate-target audit as metrics.deduplicated (2026-07-24).
       - name: deduplicated
         type: boolean
+        label: apply to any cross-project aggregate
         description: >-
           Counts each tracked thing exactly once; see metrics. Apply to any
           aggregate that spans projects.
@@ -301,6 +309,7 @@ tables:
           AND NOT (project = 'shiny-r' AND target IN ('posit/shiny', 'shiny.posit.co'))
       - name: net_increase
         type: number(quantity)
+        label: growth of a total_* over a date range
         description: >-
           How much a cumulative total_* value grew over the queried date
           range (last minus first, valid because totals only grow). The
@@ -347,6 +356,7 @@ tables:
       # Same duplicate-target audit as metrics.deduplicated (2026-07-24).
       - name: deduplicated
         type: boolean
+        label: apply to any cross-project aggregate
         description: >-
           Counts each tracked thing exactly once; see metrics. Apply to any
           ranking or aggregate that spans projects, e.g. fastest-growing
@@ -384,6 +394,7 @@ tables:
       # Same duplicate-target audit as metrics.deduplicated (2026-07-24).
       - name: deduplicated
         type: boolean
+        label: apply to any cross-project aggregate
         description: >-
           Counts each event exactly once; a few repos record their events
           under two or three project ids (see metrics). Apply to any count
