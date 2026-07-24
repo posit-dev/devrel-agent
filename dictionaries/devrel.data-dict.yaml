@@ -1,0 +1,285 @@
+$version: 0.1.0
+$learn_more: http://data-dict.tidyverse.org/
+
+name: Posit open source devrel metrics
+description: >-
+  Daily adoption and engagement metrics for Posit's open source projects,
+  collected by velocirepo from CRAN, PyPI, Plausible (website analytics),
+  OpenVSX, YouTube, and GitHub. Time series run from as early as 2008
+  (GitHub events) through yesterday; the `meta` table records the exact
+  as-of date. This is public data about public projects.
+details: >-
+  Metric naming carries the core rule: `daily_*` values are per-day amounts
+  and sum safely across days; `total_*` values are cumulative snapshots and
+  must never be summed across days — read them from `metrics_filled` (which
+  carries the last known value forward to every day) or difference them to
+  get per-day changes. Route questions accordingly: governed measures first;
+  `metrics` for daily series; `metrics_filled` for anything `total_*`;
+  `indicators` for pre-computed 28-day growth and trend; `events` only when
+  per-user or per-timestamp detail matters; `projects` to resolve project
+  names. Sources count differently (e.g. CRAN and PyPI treat mirrors,
+  caching, and bots differently), so compare levels across sources with
+  caution. A metric series starting on some date usually means collection
+  started then, not that the project launched then. A few repos and sites
+  are tracked under more than one project id with duplicated values, so
+  never aggregate across projects without deduplicating by target (see the
+  metrics table notes).
+
+version:
+  date: '2026-07-24'
+
+tables:
+  - name: metrics
+    description: >-
+      Unified daily time series across all sources. One row per project x
+      source x target x metric x date (x tags, for tagged series). Includes
+      GitHub daily counts derived from the `events` table.
+    details: >-
+      Coverage varies by source: CRAN daily downloads since 2012-10 (13
+      packages), PyPI daily downloads since 2025-06 (8 packages), Plausible
+      website analytics since 2021-12 (16 sites), OpenVSX totals since
+      2026-01 (6 extensions), YouTube totals since 2026-06-25 (one channel),
+      GitHub daily event counts since 2008 (~420 repos).
+
+      Plausible rows need care. Untagged daily_pageviews/daily_visitors/
+      daily_visits rows (2021-12-08 to 2026-06-22) are SITE-level. Rows with
+      a `page` tag (since 2026-03-02) are per-page. daily_site_* (since
+      2026-03-02) are site-level. Both shapes coexist from 2026-03-02 to
+      2026-06-22, so filter on `tags IS NULL` / `tags IS NOT NULL` before
+      aggregating a metric name across that window or values double-count.
+      For a full site-level history, union untagged daily_* (before
+      2026-03-02) with daily_site_* (after). Per-page pageviews sum exactly
+      to site pageviews; per-page visitors do NOT sum to site visitors
+      (visitors deduplicate across pages).
+
+      devrel-io switched collection systems on 2026-06-23, and some GitHub
+      series change behavior at that seam: daily_issue_comment and
+      daily_pr_comment END at 2026-06-22 (frozen history), and
+      daily_issues_closed (mildly: daily_prs_merged) systematically
+      UNDERCOUNTS after the seam because closes are only recorded for
+      recently-created issues. Avoid presenting issue-close trends across
+      mid-2026. Star events currently lag other sources by ~2 days, and
+      cumulative star sums drift from live GitHub counts by up to ~10%.
+      The CRAN series is missing ~13 scattered days over the last two years
+      (days where cranlogs hadn't yet published when the daily fetch ran;
+      they are never backfilled), so range sums slightly undercount and can
+      differ from cranlogs' own current totals.
+
+      Some targets are tracked under multiple project ids with DUPLICATED
+      values: rstudio/shiny events appear under both `shiny` and `shiny-r`;
+      posit-dev/py-shiny under `py-shiny` and `shiny-python`;
+      posit-dev/orbital under `orbital`, `orbital-r`, and `orbital-python`;
+      posit-dev/pointblank under `pointblank` and `pointblank-python`; the
+      posit/shiny OpenVSX extension and the shiny.posit.co Plausible site
+      under both `shiny-python` and `shiny-r`. Sums across projects must
+      deduplicate by (source, target); for a single project, prefer the
+      curated id (`shiny-r`, `shiny-python`, `orbital-r`, `orbital-python`,
+      `pointblank-python`).
+    columns:
+      - name: project
+        type: string
+        examples: [dplyr, quarto, shiny-python, positron]
+        description: Project id; join key to projects.id.
+      - name: source
+        type: enum
+        values: [cran, pypi, plausible, openvsx, youtube, github]
+        description: Collection source.
+      - name: target
+        type: string
+        examples: [dplyr, dplyr.tidyverse.org, tidyverse/dplyr, posit/air-vscode]
+        description: >-
+          Source-specific identifier: CRAN/PyPI package name, Plausible
+          domain, GitHub repo slug, OpenVSX extension id, or YouTube channel
+          handle.
+      - name: metric
+        type: enum
+        values:
+          daily_downloads: package downloads that day (cran, pypi)
+          daily_pageviews: pageviews; site-level when tags IS NULL, per-page when tagged (plausible)
+          daily_visitors: unique visitors; same tagging rule (plausible)
+          daily_visits: visits/sessions; same tagging rule (plausible)
+          daily_site_pageviews: site-wide pageviews, since 2026-03-02 (plausible)
+          daily_site_visitors: site-wide unique visitors, since 2026-03-02 (plausible)
+          daily_site_visits: site-wide visits, since 2026-03-02 (plausible)
+          daily_stars: GitHub stars gained that day, derived from events
+          daily_forks: forks created that day
+          daily_issues_opened: issues opened that day
+          daily_issues_closed: issues closed that day; undercounts after 2026-06-22
+          daily_prs_opened: PRs opened that day
+          daily_prs_merged: PRs merged that day
+          daily_issue_comment: issue comments; series ends 2026-06-22
+          daily_pr_comment: PR comments; series ends 2026-06-22
+          total_downloads: cumulative extension downloads (openvsx)
+          total_ratings: cumulative rating count (openvsx)
+          total_reviews: cumulative review count (openvsx)
+          total_views: cumulative views per video, tagged with video_id (youtube)
+          total_likes: cumulative likes per video (youtube)
+          total_comments: cumulative comments per video (youtube)
+          total_channel_views: cumulative channel views (youtube)
+          total_subscribers: channel subscribers, rounded by the API (youtube)
+          total_videos: videos on the channel (youtube)
+      - name: date
+        type: date
+        description: The day the value describes (UTC).
+      - name: value
+        type: number(quantity)
+        description: Metric value; daily amount or cumulative snapshot per the metric name.
+      - name: tags
+        type: string
+        description: >-
+          JSON object or NULL. Plausible per-page rows carry {"page": path};
+          YouTube per-video rows carry {"video_id": id}. Access fields with
+          tags->>'page' / tags->>'video_id'.
+
+  - name: metrics_filled
+    description: >-
+      Like metrics, but with total_* snapshot series forward-filled to every
+      day. The table to use for any total_* question.
+    details: >-
+      velocirepo only writes a total_* row when the value changes, so the raw
+      metrics table is sparse (e.g. total_subscribers is rounded by the
+      YouTube API and can sit unchanged for weeks). Here the last known value
+      is carried forward to each day through the most recent fetch, so "the
+      value on date X" and "current value" queries are correct. daily_*
+      rows pass through unchanged and are NOT gap-filled.
+    columns:
+      - name: project
+        type: string
+        description: Project id; join key to projects.id.
+      - name: metric
+        type: string
+        description: Same metric names as metrics.
+      - name: date
+        type: date
+        description: Calendar day; for total_* every day is present.
+      - name: value
+        type: number(quantity)
+        description: Last observed cumulative value as of that day (total_*), or the daily amount.
+
+  - name: indicators
+    description: >-
+      Pre-computed momentum for every daily_* series: 28-day growth rate and
+      28-day trend, one row per project x source x metric x date x indicator.
+    details: >-
+      growth_rate compares the trailing 28 observations against the 28
+      before that ((sum_28d - sum_prior_28d) / sum_prior_28d); trend is the
+      per-day regression slope over the trailing 28 observations. Windows
+      are row-based, so where a series has missing days (CRAN) they span
+      slightly more than 28 calendar days.
+    columns:
+      - name: indicator
+        type: enum
+        values: [growth_rate, trend]
+        description: Which momentum statistic the row carries.
+      - name: value
+        type: number(quantity)
+        description: >-
+          growth_rate is a proportion (0.1 = up 10% vs the prior window);
+          trend is the slope in metric units per day.
+
+  - name: events
+    description: >-
+      Individual GitHub events since 2008 with timestamp and username. Use
+      for per-user or sub-daily detail; for counts over time, prefer the
+      derived daily_* metrics.
+    details: >-
+      Tags carry only the acting username; there is no issue/PR number or
+      title, so "which issues" questions cannot be answered, only "how
+      many" and "by whom". Comment events end 2026-06-22, and issue_close
+      undercounts after that date (see metrics). Some repos appear under two
+      project ids with duplicated events (see metrics); deduplicate by
+      target when counting across projects.
+    columns:
+      - name: type
+        type: enum
+        values: [star, fork, issue_open, issue_close, issue_comment, pr_open, pr_merge, pr_comment]
+        description: Event type.
+      - name: datetime
+        type: string
+        description: Event timestamp, UTC.
+      - name: tags
+        type: string
+        description: 'JSON like {"user": login}; access with tags->>''user''.'
+
+  - name: projects
+    description: >-
+      One row per tracked project: id, display name, description, language
+      tags, website. Use to resolve informal names ("Shiny for Python" ->
+      shiny-python) before querying.
+    details: >-
+      466 projects are listed, but only ~20 curated ones have package/site
+      metrics; the rest are GitHub-only repos across the posit-dev, rstudio,
+      tidyverse, and quarto-dev orgs (49 have no data at all yet). Which
+      sources cover a project is best read from the data, e.g.
+      SELECT DISTINCT source FROM metrics WHERE project = 'ellmer'.
+    columns:
+      - name: id
+        type: string
+        constraints: [primary_key]
+        examples: [dplyr, shiny-r, shiny-python, great-tables]
+        description: Project id used as `project` throughout.
+      - name: tags
+        type: string
+        examples: [r, python, typescript]
+        description: Language/topic tags (list column).
+
+  - name: content
+    description: >-
+      Catalog of the @PositPBC YouTube channel: one row per video with
+      title, description, publish time, URL, and duration (seconds).
+    details: >-
+      Join to per-video metrics with metrics.tags->>'video_id' = content.id
+      (use metrics_filled for the cumulative view counts).
+
+  - name: meta
+    description: >-
+      One row: as_of (the most recent metric date, normally yesterday) and
+      built_at (when this database was materialized). Check it before
+      answering "current"/"latest" questions and mention the as-of date when
+      freshness matters.
+
+relationships:
+  - join: metrics.project = projects.id
+    cardinality: many-to-one
+  - join: metrics.tags->>'video_id' = content.id
+    cardinality: many-to-one
+    description: YouTube per-video metrics to the video catalog.
+
+glossary:
+  project: >-
+    A tracked open source project, identified by projects.id. The same
+    project can be measured by several sources (e.g. querychat ships on
+    both CRAN and PyPI; disambiguate with the source column).
+  source vs target: >-
+    source is where a number came from (cran, pypi, plausible, openvsx,
+    youtube, github); target is the source-specific identifier there
+    (package name, domain, repo slug, extension id, channel handle).
+  daily_* vs total_*: >-
+    daily_* is a per-day amount (summable); total_* is a cumulative
+    snapshot (never sum across days; use metrics_filled or difference it).
+  2026-06-23 migration seam: >-
+    devrel-io switched collection systems that day. Comment events end
+    2026-06-22, untagged site-level Plausible rows end there, and
+    issue-close counts undercount afterward. Treat trends that straddle
+    mid-2026 for those series with suspicion.
+  posit: >-
+    The project id for the @PositPBC YouTube channel itself, not a
+    repository or package.
+  positron: >-
+    Positron is a desktop IDE distributed as installers, not an R/Python
+    package: it has GitHub and website metrics but no CRAN or PyPI
+    downloads. Download counts for it cannot be answered from this data.
+  tidyverse: >-
+    The `tidyverse` project is the tidyverse meta-package and the
+    tidyverse/tidyverse repo, NOT a rollup of all tidyverse packages.
+    "Downloads of the tidyverse" as a whole means summing the individual
+    packages (dplyr, ggplot2, ...), each tracked as its own project.
+  downloads: >-
+    CRAN and PyPI download counts include automated traffic (mirrors, CI,
+    caching) and each registry counts differently; they indicate scale and
+    trend, not user counts, and are not directly comparable across
+    registries. PyPI counts here exclude known mirrors.
+  stars: >-
+    Star counts are derived from star events and approximate the live
+    GitHub number (unstars and collection quirks put them within ~10%,
+    usually much closer).
