@@ -38,19 +38,28 @@ build_devrel_db <- function(
 
   DBI::dbExecute(con, "CREATE TABLE out.projects AS SELECT * FROM src.projects")
 
-  # Materialize in dependency order, repointing each view at its materialized
-  # table as we go so every JSONL glob is parsed exactly once: `metrics`
+  # Materialize in dependency order, staging each view's rows in the
+  # connection's in-memory database and repointing the view at the staged
+  # table as we go, so every JSONL glob is parsed exactly once: `metrics`
   # unions over `events`, and `metrics_filled`/`indicators` build on
   # `metrics`. `__velocirepo_metric_watermarks` is left as a view; it's tiny
-  # and only consulted while materializing `metrics_filled`.
+  # and only consulted while materializing `metrics_filled`. The staged
+  # copies keep velocirepo's shape (downstream views need the tags grain);
+  # only what lands in `out` applies the tags extraction, which also keeps
+  # the artifact compact (transforming `out` tables in place would leave
+  # the originals' blocks in the file).
   for (name in c("events", "metrics", "content", "metrics_filled", "indicators")) {
     DBI::dbExecute(
       con,
-      sprintf("CREATE TABLE out.%s AS SELECT * FROM %s", name, name)
+      sprintf("CREATE TABLE staged_%s AS SELECT * FROM %s", name, name)
     )
     DBI::dbExecute(
       con,
-      sprintf("CREATE OR REPLACE VIEW %s AS SELECT * FROM out.%s", name, name)
+      sprintf("CREATE OR REPLACE VIEW %s AS SELECT * FROM staged_%s", name, name)
+    )
+    DBI::dbExecute(
+      con,
+      sprintf("CREATE TABLE out.%s AS %s", name, materialize_select(name))
     )
   }
 
@@ -116,6 +125,43 @@ rewrite_data_paths <- function(sql, data_dir, call = rlang::caller_env()) {
   gsub(prefixes, data_dir, sql, fixed = TRUE)
 }
 
+# The SELECT that lands a staged table in the output. The JSON tags blobs
+# carry one key per source (Plausible `page`, YouTube `video_id`, GitHub
+# `user`); extract them as plain columns and drop the blobs, so queries
+# need neither DuckDB's json extension (JSON-typed columns can't be read at
+# all without it) nor the ->> idiom, which data-dict's expression grammar
+# lacks. `username`, not `user`, to stay clear of the SQL keyword.
+# content's remaining JSON columns become plain text (its `tags` is a
+# keyword list; `metadata` is empty today but kept in case velocirepo
+# starts populating it).
+materialize_select <- function(name) {
+  staged <- sprintf("staged_%s", name)
+  switch(
+    name,
+    metrics = ,
+    metrics_filled = ,
+    indicators = sprintf(
+      "SELECT * EXCLUDE (tags),
+              tags->>'page' AS page,
+              tags->>'video_id' AS video_id
+       FROM %s",
+      staged
+    ),
+    events = sprintf(
+      "SELECT * EXCLUDE (tags), tags->>'user' AS username FROM %s",
+      staged
+    ),
+    content = sprintf(
+      "SELECT * EXCLUDE (tags, metadata),
+              CAST(tags AS VARCHAR) AS tags,
+              CAST(metadata AS VARCHAR) AS metadata
+       FROM %s",
+      staged
+    ),
+    sprintf("SELECT * FROM %s", staged)
+  )
+}
+
 load_json_extension <- function(con, call = rlang::caller_env()) {
   tryCatch(
     DBI::dbExecute(con, "INSTALL json; LOAD json;"),
@@ -139,6 +185,21 @@ check_build <- function(con, call = rlang::caller_env()) {
     if (n == 0) {
       cli::cli_abort("Materialized table {.field {table}} is empty.", call = call)
     }
+  }
+
+  # The artifact must be readable without the json extension (a Connect
+  # deploy constraint), which a JSON-typed column would break.
+  json_columns <- DBI::dbGetQuery(
+    con,
+    "SELECT table_name, column_name FROM duckdb_columns()
+     WHERE database_name = 'out' AND data_type = 'JSON'"
+  )
+  if (nrow(json_columns) > 0) {
+    cli::cli_abort(
+      "JSON-typed column{?s} remain in the output:
+       {.field {paste(json_columns$table_name, json_columns$column_name, sep = '.')}}.",
+      call = call
+    )
   }
 
   as_of <- DBI::dbGetQuery(con, "SELECT as_of FROM out.meta")$as_of

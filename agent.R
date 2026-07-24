@@ -9,8 +9,6 @@ devrel_con <- DBI::dbConnect(
   "data/devrel.duckdb",
   read_only = TRUE
 )
-# The tags columns are stored as JSON.
-DBI::dbExecute(devrel_con, "INSTALL json; LOAD json;")
 
 devrel_agent <- commons(
   client = ellmer::chat_anthropic(model = "claude-sonnet-5"),
