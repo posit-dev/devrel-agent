@@ -12,8 +12,9 @@ details: >-
   Metric naming carries the core rule: `daily_*` values are per-day amounts
   and sum safely across days; `total_*` values are cumulative snapshots and
   must never be summed across days — read them from `metrics_filled` (which
-  carries the last known value forward to every day) or difference them to
-  get per-day changes. Route questions accordingly: governed measures first;
+  carries the last known value forward to every day) or take
+  {{net_increase}} over a date range. Route questions accordingly: governed
+  metrics and filters first (query_metrics, or {{name}} tokens in SQL);
   `metrics` for daily series; `metrics_filled` for anything `total_*`;
   `indicators` for pre-computed 28-day growth and trend; `events` only when
   per-user or per-timestamp detail matters; `projects` to resolve project
@@ -21,9 +22,8 @@ details: >-
   caching, and bots differently), so compare levels across sources with
   caution. A metric series starting on some date usually means collection
   started then, not that the project launched then. A few repos and sites
-  are tracked under more than one project id with duplicated values, so
-  never aggregate across projects without deduplicating by target (see the
-  metrics table notes).
+  are tracked under more than one project id with duplicated values —
+  never aggregate across projects without the {{deduplicated}} filter.
 
 version:
   date: '2026-07-24'
@@ -32,8 +32,9 @@ tables:
   - name: metrics
     description: >-
       Unified daily time series across all sources. One row per project x
-      source x target x metric x date (x tags, for tagged series). Includes
-      GitHub daily counts derived from the `events` table.
+      source x target x metric x date (x page or video_id, for per-page and
+      per-video series). Includes GitHub daily counts derived from the
+      `events` table.
     details: >-
       Coverage varies by source: CRAN daily downloads since 2012-10 (13
       packages), PyPI daily downloads since 2025-06 (8 packages), Plausible
@@ -41,16 +42,16 @@ tables:
       2026-01 (6 extensions), YouTube totals since 2026-06-25 (one channel),
       GitHub daily event counts since 2008 (~420 repos).
 
-      Plausible rows need care. Untagged daily_pageviews/daily_visitors/
-      daily_visits rows (2021-12-08 to 2026-06-22) are SITE-level. Rows with
-      a `page` tag (since 2026-03-02) are per-page. daily_site_* (since
-      2026-03-02) are site-level. Both shapes coexist from 2026-03-02 to
-      2026-06-22, so filter on `tags IS NULL` / `tags IS NOT NULL` before
-      aggregating a metric name across that window or values double-count.
-      For a full site-level history, union untagged daily_* (before
-      2026-03-02) with daily_site_* (after). Per-page pageviews sum exactly
-      to site pageviews; per-page visitors do NOT sum to site visitors
-      (visitors deduplicate across pages).
+      Plausible rows need care. daily_pageviews/daily_visitors/daily_visits
+      rows with `page IS NULL` (2021-12-08 to 2026-06-22) are SITE-level;
+      rows with `page IS NOT NULL` (since 2026-03-02) are per-page, so both
+      shapes share a metric name from 2026-03-02 to 2026-06-22 — filter on
+      `page` before aggregating across that window or values double-count.
+      daily_site_* rows are site-level and begin 2026-06-23 (2026-03-02 for
+      shiny.posit.co). The {{site_traffic}} and {{page_traffic}} filters
+      are the governed way through all of this. Per-page pageviews sum
+      exactly to site pageviews; per-page visitors do NOT sum to site
+      visitors (visitors deduplicate across pages).
 
       devrel-io switched collection systems on 2026-06-23, and some GitHub
       series change behavior at that seam: daily_issue_comment and
@@ -72,9 +73,12 @@ tables:
       posit-dev/pointblank under `pointblank` and `pointblank-python`; the
       posit/shiny OpenVSX extension and the shiny.posit.co Plausible site
       under both `shiny-python` and `shiny-r`. Sums across projects must
-      deduplicate by (source, target); for a single project, prefer the
-      curated id (`shiny-r`, `shiny-python`, `orbital-r`, `orbital-python`,
-      `pointblank-python`).
+      count each (source, target) once — apply the {{deduplicated}} filter,
+      which keeps the shared extension and site under `shiny-python`. For a
+      single project, prefer the curated id (`shiny-r`, `shiny-python`,
+      `orbital-r`, `orbital-python`, `pointblank-python`); for
+      shiny.posit.co traffic specifically, query project `shiny-python` or
+      the target directly.
     columns:
       - name: project
         type: string
@@ -95,9 +99,9 @@ tables:
         type: enum
         values:
           daily_downloads: package downloads that day (cran, pypi)
-          daily_pageviews: pageviews; site-level when tags IS NULL, per-page when tagged (plausible)
-          daily_visitors: unique visitors; same tagging rule (plausible)
-          daily_visits: visits/sessions; same tagging rule (plausible)
+          daily_pageviews: pageviews; site-level when page IS NULL, per-page otherwise (plausible)
+          daily_visitors: unique visitors; same page rule (plausible)
+          daily_visits: visits/sessions; same page rule (plausible)
           daily_site_pageviews: site-wide pageviews, since 2026-03-02 (plausible)
           daily_site_visitors: site-wide unique visitors, since 2026-03-02 (plausible)
           daily_site_visits: site-wide visits, since 2026-03-02 (plausible)
@@ -112,7 +116,7 @@ tables:
           total_downloads: cumulative extension downloads (openvsx)
           total_ratings: cumulative rating count (openvsx)
           total_reviews: cumulative review count (openvsx)
-          total_views: cumulative views per video, tagged with video_id (youtube)
+          total_views: cumulative views per video (join video_id to content.id) (youtube)
           total_likes: cumulative likes per video (youtube)
           total_comments: cumulative comments per video (youtube)
           total_channel_views: cumulative channel views (youtube)
@@ -124,12 +128,126 @@ tables:
       - name: value
         type: number(quantity)
         description: Metric value; daily amount or cumulative snapshot per the metric name.
-      - name: tags
+      - name: page
+        type: string
+        examples: [/, /py/docs/overview.html]
+        description: >-
+          URL path for per-page Plausible rows (since 2026-03-02); NULL for
+          every other row, including site-level Plausible rows.
+      - name: video_id
         type: string
         description: >-
-          JSON object or NULL. Plausible per-page rows carry {"page": path};
-          YouTube per-video rows carry {"video_id": id}. Access fields with
-          tags->>'page' / tags->>'video_id'.
+          YouTube video id for per-video rows; join key to content.id. NULL
+          for every other row.
+    definitions:
+      # Provenance: duplicate-target audit of the data, 2026-07-24
+      # (SELECT source, target ... HAVING COUNT(DISTINCT project) > 1).
+      # Keeper choices: curated ids win; the shared posit/shiny extension
+      # and shiny.posit.co site stay under shiny-python, whose Plausible
+      # series is continuous (shiny-r's has a gap-producing row shape
+      # before the seam).
+      - name: deduplicated
+        type: boolean
+        description: >-
+          Counts each tracked thing exactly once. A few repos and sites are
+          recorded under more than one project id with duplicated values;
+          this keeps one copy of each. Apply to any aggregate that spans
+          projects (leaderboards, totals across Posit).
+        expr: >-
+          project NOT IN ('shiny', 'py-shiny', 'orbital', 'pointblank')
+          AND NOT (project = 'orbital-python' AND source = 'github')
+          AND NOT (project = 'shiny-r' AND target IN ('posit/shiny', 'shiny.posit.co'))
+      # Provenance: era audit 2026-07-24. Untagged site rows end 2026-06-22
+      # and daily_site_* begins 2026-06-23 for every site except
+      # shiny.posit.co (daily_site_* from 2026-03-02 under shiny-python),
+      # so the eras never overlap within a kept project and no date clamp
+      # is needed; the one cross-project overlap is deduplicated's job.
+      - name: site_traffic
+        type: boolean
+        description: >-
+          Site-level website analytics rows across both collection eras.
+          Use with traffic_metric so the eras aggregate under one metric
+          name, and with deduplicated (one site is tracked under two
+          project ids whose rows would otherwise double-count).
+        expr: >-
+          source = 'plausible'
+          AND ((page IS NULL
+                AND metric IN ('daily_pageviews', 'daily_visitors', 'daily_visits'))
+               OR metric LIKE 'daily_site_%')
+      - name: page_traffic
+        type: boolean
+        description: >-
+          Per-page website analytics rows. Per-page data starts 2026-03-02;
+          earlier page-level questions cannot be answered.
+        expr: page IS NOT NULL
+      - name: pre_seam
+        type: boolean
+        description: >-
+          Rows collected before the 2026-06-23 collection-system migration.
+          Clamp issue-close and comment trend questions here; those series
+          break at the seam.
+        expr: date <= '2026-06-22'
+      - name: traffic_metric
+        type: string
+        description: >-
+          The canonical website metric name: maps the newer daily_site_*
+          names onto daily_pageviews/daily_visitors/daily_visits so the two
+          collection eras aggregate under one name.
+        expr: >-
+          CASE
+            WHEN metric = 'daily_site_pageviews' THEN 'daily_pageviews'
+            WHEN metric = 'daily_site_visitors' THEN 'daily_visitors'
+            WHEN metric = 'daily_site_visits' THEN 'daily_visits'
+            ELSE metric
+          END
+      # date_trunc is outside data-dict's expression grammar (its one
+      # deviation here); kept because time axes are this agent's modal
+      # question shape.
+      - name: month
+        type: date
+        description: The row's calendar month, for monthly rollups.
+        expr: CAST(date_trunc('month', date) AS DATE)
+      - name: downloads
+        type: number(quantity)
+        description: >-
+          Package downloads (CRAN + PyPI daily_downloads), deduplicated.
+          Includes automated traffic (mirrors, CI, caching); indicates
+          scale and trend, not user counts. The CRAN series is missing ~13
+          scattered days, so range sums slightly undercount.
+        expr: SUM(value) FILTER (WHERE metric = 'daily_downloads' AND deduplicated)
+      - name: pageviews
+        type: number(quantity)
+        description: >-
+          Site-level pageviews across both collection eras, deduplicated.
+        expr: >-
+          SUM(value) FILTER (WHERE site_traffic
+            AND traffic_metric = 'daily_pageviews' AND deduplicated)
+      - name: visitors
+        type: number(quantity)
+        description: >-
+          Sum of DAILY unique visitors, site-level, both eras, deduplicated.
+          Daily uniques do not deduplicate across days, so a range total
+          overstates distinct people; present as visitor-days or a daily
+          average.
+        expr: >-
+          SUM(value) FILTER (WHERE site_traffic
+            AND traffic_metric = 'daily_visitors' AND deduplicated)
+      - name: visits
+        type: number(quantity)
+        description: >-
+          Site-level visits/sessions across both collection eras,
+          deduplicated.
+        expr: >-
+          SUM(value) FILTER (WHERE site_traffic
+            AND traffic_metric = 'daily_visits' AND deduplicated)
+      - name: stars_gained
+        type: number(quantity)
+        description: >-
+          GitHub stars gained (sum of daily_stars), deduplicated. With no
+          date constraint this is the current star total. Star counts are
+          approximate: within ~10% of live GitHub, usually much closer,
+          and star events lag other sources by ~2 days.
+        expr: SUM(value) FILTER (WHERE metric = 'daily_stars' AND deduplicated)
 
   - name: metrics_filled
     description: >-
@@ -146,6 +264,13 @@ tables:
       - name: project
         type: string
         description: Project id; join key to projects.id.
+      - name: source
+        type: enum
+        values: [cran, pypi, plausible, openvsx, youtube, github]
+        description: Collection source.
+      - name: target
+        type: string
+        description: Source-specific identifier, as in metrics.
       - name: metric
         type: string
         description: Same metric names as metrics.
@@ -155,6 +280,35 @@ tables:
       - name: value
         type: number(quantity)
         description: Last observed cumulative value as of that day (total_*), or the daily amount.
+      - name: video_id
+        type: string
+        description: >-
+          YouTube video id for per-video series (total_views etc.); join key
+          to content.id. NULL otherwise.
+      - name: page
+        type: string
+        description: URL path for per-page Plausible series; NULL otherwise.
+    definitions:
+      # Same duplicate-target audit as metrics.deduplicated (2026-07-24).
+      - name: deduplicated
+        type: boolean
+        description: >-
+          Counts each tracked thing exactly once; see metrics. Apply to any
+          aggregate that spans projects.
+        expr: >-
+          project NOT IN ('shiny', 'py-shiny', 'orbital', 'pointblank')
+          AND NOT (project = 'orbital-python' AND source = 'github')
+          AND NOT (project = 'shiny-r' AND target IN ('posit/shiny', 'shiny.posit.co'))
+      - name: net_increase
+        type: number(quantity)
+        description: >-
+          How much a cumulative total_* value grew over the queried date
+          range (last minus first, valid because totals only grow). The
+          governed way to turn a total_* snapshot series into a change —
+          e.g. OpenVSX downloads gained in a month. Constrain to one metric
+          and group by project or video_id; never sum total_* values across
+          days.
+        expr: MAX(value) - MIN(value)
 
   - name: indicators
     description: >-
@@ -167,6 +321,19 @@ tables:
       are row-based, so where a series has missing days (CRAN) they span
       slightly more than 28 calendar days.
     columns:
+      - name: project
+        type: string
+        description: Project id; join key to projects.id.
+      - name: source
+        type: enum
+        values: [cran, pypi, plausible, openvsx, youtube, github]
+        description: Collection source.
+      - name: metric
+        type: string
+        description: The daily_* metric the indicator is computed over.
+      - name: date
+        type: date
+        description: The day the trailing windows end.
       - name: indicator
         type: enum
         values: [growth_rate, trend]
@@ -176,6 +343,18 @@ tables:
         description: >-
           growth_rate is a proportion (0.1 = up 10% vs the prior window);
           trend is the slope in metric units per day.
+    definitions:
+      # Same duplicate-target audit as metrics.deduplicated (2026-07-24).
+      - name: deduplicated
+        type: boolean
+        description: >-
+          Counts each tracked thing exactly once; see metrics. Apply to any
+          ranking or aggregate that spans projects, e.g. fastest-growing
+          leaderboards.
+        expr: >-
+          project NOT IN ('shiny', 'py-shiny', 'orbital', 'pointblank')
+          AND NOT (project = 'orbital-python' AND source = 'github')
+          AND NOT (project = 'shiny-r' AND target IN ('posit/shiny', 'shiny.posit.co'))
 
   - name: events
     description: >-
@@ -183,12 +362,12 @@ tables:
       for per-user or sub-daily detail; for counts over time, prefer the
       derived daily_* metrics.
     details: >-
-      Tags carry only the acting username; there is no issue/PR number or
-      title, so "which issues" questions cannot be answered, only "how
-      many" and "by whom". Comment events end 2026-06-22, and issue_close
-      undercounts after that date (see metrics). Some repos appear under two
-      project ids with duplicated events (see metrics); deduplicate by
-      target when counting across projects.
+      Each event records only the acting username; there is no issue/PR
+      number or title, so "which issues" questions cannot be answered, only
+      "how many" and "by whom". Comment events end 2026-06-22, and
+      issue_close undercounts after that date (see metrics). Some repos
+      appear under two project ids with duplicated events (see metrics);
+      apply the {{deduplicated}} filter when counting across projects.
     columns:
       - name: type
         type: enum
@@ -197,9 +376,22 @@ tables:
       - name: datetime
         type: string
         description: Event timestamp, UTC.
-      - name: tags
+      - name: username
         type: string
-        description: 'JSON like {"user": login}; access with tags->>''user''.'
+        description: >-
+          GitHub login of the acting user ('unknown' for some events).
+    definitions:
+      # Same duplicate-target audit as metrics.deduplicated (2026-07-24).
+      - name: deduplicated
+        type: boolean
+        description: >-
+          Counts each event exactly once; a few repos record their events
+          under two or three project ids (see metrics). Apply to any count
+          that spans projects, including per-user contribution counts.
+        expr: >-
+          project NOT IN ('shiny', 'py-shiny', 'orbital', 'pointblank')
+          AND NOT (project = 'orbital-python' AND source = 'github')
+          AND NOT (project = 'shiny-r' AND target IN ('posit/shiny', 'shiny.posit.co'))
 
   - name: projects
     description: >-
@@ -228,8 +420,25 @@ tables:
       Catalog of the @PositPBC YouTube channel: one row per video with
       title, description, publish time, URL, and duration (seconds).
     details: >-
-      Join to per-video metrics with metrics.tags->>'video_id' = content.id
-      (use metrics_filled for the cumulative view counts).
+      Join to per-video metrics with video_id = content.id (use
+      metrics_filled for the cumulative view counts).
+    columns:
+      - name: id
+        type: string
+        constraints: [primary_key]
+        description: YouTube video id; join target for metrics.video_id.
+      - name: title
+        type: string
+        description: Video title.
+      - name: published_at
+        type: string
+        description: Publish timestamp, UTC.
+      - name: duration
+        type: number(quantity)
+        description: Video length in seconds.
+      - name: tags
+        type: string
+        description: Keyword list as text, e.g. for LIKE searches by topic.
 
   - name: meta
     description: >-
@@ -241,9 +450,14 @@ tables:
 relationships:
   - join: metrics.project = projects.id
     cardinality: many-to-one
-  - join: metrics.tags->>'video_id' = content.id
+  - join: metrics.video_id = content.id
     cardinality: many-to-one
     description: YouTube per-video metrics to the video catalog.
+  - join: metrics_filled.video_id = content.id
+    cardinality: many-to-one
+    description: >-
+      Cumulative per-video series (total_views etc.) to the video catalog;
+      the usual join for video leaderboards.
 
 glossary:
   project: >-
@@ -259,9 +473,9 @@ glossary:
     snapshot (never sum across days; use metrics_filled or difference it).
   2026-06-23 migration seam: >-
     devrel-io switched collection systems that day. Comment events end
-    2026-06-22, untagged site-level Plausible rows end there, and
-    issue-close counts undercount afterward. Treat trends that straddle
-    mid-2026 for those series with suspicion.
+    2026-06-22, the original site-level Plausible rows (page IS NULL) end
+    there, and issue-close counts undercount afterward. Treat trends that
+    straddle mid-2026 for those series with suspicion.
   posit: >-
     The project id for the @PositPBC YouTube channel itself, not a
     repository or package.
@@ -269,6 +483,11 @@ glossary:
     Positron is a desktop IDE distributed as installers, not an R/Python
     package: it has GitHub and website metrics but no CRAN or PyPI
     downloads. Download counts for it cannot be answered from this data.
+  shiny.posit.co: >-
+    The Shiny website, serving both the R and Python frameworks. It is
+    tracked under both shiny-r and shiny-python with duplicated values;
+    deduplicated keeps it under shiny-python, so query its traffic there
+    (or by target), not under shiny-r.
   tidyverse: >-
     The `tidyverse` project is the tidyverse meta-package and the
     tidyverse/tidyverse repo, NOT a rollup of all tidyverse packages.
