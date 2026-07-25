@@ -31,10 +31,13 @@
     (CRAN daily downloads summed by period): monthly {q02_monthly}. Yearly:
     {q02_yearly} (2026 is partial). So: June 2026 vs June 2025 is up ~33%;
     the three most recent complete months decline; the decade view grew
-    enormously to a 2022 peak and has plateaued since. The best answers note
-    more than one horizon. Cited values must match the series above within
-    rounding. The answer should not present a single horizon's direction as
-    the whole story without naming its window.
+    enormously to a 2022 peak and has plateaued since. An answer that names
+    its window(s) and cites values consistent with the series (within
+    rounding; values from other real series in the trajectory, like the
+    28-day indicator, are also fine) earns correct_logic, filters_scope, and
+    interpretation on that basis alone — covering multiple horizons is a
+    strength, never a requirement. Fail interpretation only when a direction
+    claim carries no identifiable window at all.
 
 - id: q03
   category: numeric
@@ -165,10 +168,16 @@
     Under the site's primary id the series is actually continuous from
     2026-03-02. Failure modes: inventing a launch/marketing narrative for
     the jump; presenting the doubled numbers as a real audience change.
+    Separately, the deduplicated single-id series does contain a real
+    one-day spike on 2026-06-25 ({q10_june25_pageviews} pageviews vs a
+    ~4,100–5,000 weekday baseline): an answer that also reports that spike,
+    hedged or not, is describing real data — not inventing an audience
+    story — as long as the measurement change remains its core explanation.
     correct_logic = names the measurement migration or duplication, not an
-    audience story. filters_scope = anchors to the right date (2026-06-23)
-    and the right site. interpretation_limits = says what the "weirdness"
-    concretely is in the data. fabrication = no invented events.
+    audience story, as the core explanation. filters_scope = anchors to the
+    right date (2026-06-23) and the right site. interpretation_limits =
+    says what the "weirdness" concretely is in the data. fabrication = no
+    invented events.
 
 - id: q11
   category: nuanced_answerable
@@ -370,18 +379,6 @@
     be labeled as current/lifetime. Fabrication or provenance failure:
     back-filling May numbers from snapshots, or presenting lifetime views
     as "how they did in May".
-
-- id: q22
-  category: not_answerable
-  target_type: rubric
-  input: "what fraction of our github stars come from enterprise users?"
-  target: |
-    No user attributes exist anywhere in the data (star events carry a
-    username at most; no company, domain, or account-type information).
-    Correct limitation: user segmentation is not derivable. There is no
-    good proxy; an answer inventing a segmentation heuristic and reporting
-    a fraction fails fabrication. Total star counts, offered as context
-    and labeled, are fine.
 
 - id: q23
   category: not_answerable

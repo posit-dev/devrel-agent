@@ -34,6 +34,7 @@ q09_pypi: 'PyPI (orbital-python): series starts 2025-07-12 (collection began 202
   28,538 total, 22,800 in 2026 YTD'
 q09_stars: 'github stars all-time: 111 deduplicated vs 341 summed naively across the
   three orbital ids'
+q10_june25_pageviews: '6,800'
 q11_downloads_matched: 'downloads since 2025-06-04 (PyPI collection start): shiny
   (CRAN) 8,420,523 vs shiny for python (PyPI) 3,430,544'
 q11_stars_yearly: '2023: rstudio/shiny 328 vs py-shiny 508; 2024: rstudio/shiny 272

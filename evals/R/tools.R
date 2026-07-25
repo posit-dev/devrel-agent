@@ -58,13 +58,19 @@ tool_submit_grade <- function(category, state) {
   )
 }
 
+# Each item takes a required reason so the audit trail can't be skipped and
+# each score must be argued against its own criterion, not a shared critique.
 tool_submit_nuanced_grade <- function(state) {
   ellmer::tool(
     function(
       uses_correct_logic,
+      uses_correct_logic_reason,
       handles_filters_and_scope,
+      handles_filters_and_scope_reason,
       states_interpretation_and_limits,
-      avoids_fabrication
+      states_interpretation_and_limits_reason,
+      avoids_fabrication,
+      avoids_fabrication_reason
     ) {
       scores <- validate_binary_scores(
         list(
@@ -75,21 +81,39 @@ tool_submit_nuanced_grade <- function(state) {
         )
       )
       state$raw_scores <- scores
+      state$item_reasons <- c(
+        uses_correct_logic = uses_correct_logic_reason,
+        handles_filters_and_scope = handles_filters_and_scope_reason,
+        states_interpretation_and_limits = states_interpretation_and_limits_reason,
+        avoids_fabrication = avoids_fabrication_reason
+      )
       as.list(scores)
     },
-    "Submit binary rubric scores for a nuanced answerable question.",
+    "Submit binary rubric scores for a nuanced answerable question. Every item requires its own reason, judged against that item's criterion alone.",
     arguments = list(
       uses_correct_logic = ellmer::type_integer(
         "1 if the answer uses relevant evidence and correct data logic per the grading facts; otherwise 0."
       ),
+      uses_correct_logic_reason = ellmer::type_string(
+        "One or two sentences justifying this score against this item's criterion alone, citing the grading fact or trajectory line it rests on."
+      ),
       handles_filters_and_scope = ellmer::type_integer(
         "1 if the answer handles the scope, windows, deduplication, and coverage boundaries the grading facts require; otherwise 0."
+      ),
+      handles_filters_and_scope_reason = ellmer::type_string(
+        "One or two sentences justifying this score against this item's criterion alone, citing the grading fact or trajectory line it rests on."
       ),
       states_interpretation_and_limits = ellmer::type_integer(
         "1 if the answer states how it operationalized the question and the required caveats or limits; otherwise 0."
       ),
+      states_interpretation_and_limits_reason = ellmer::type_string(
+        "One or two sentences justifying this score against this item's criterion alone, citing the grading fact or trajectory line it rests on."
+      ),
       avoids_fabrication = ellmer::type_integer(
         "1 if the answer avoids invented numbers, sources, or unsupported conclusions; otherwise 0."
+      ),
+      avoids_fabrication_reason = ellmer::type_string(
+        "One or two sentences justifying this score against this item's criterion alone, citing the grading fact or trajectory line it rests on."
       )
     ),
     name = "submit_grade",
@@ -99,7 +123,14 @@ tool_submit_nuanced_grade <- function(state) {
 
 tool_submit_not_answerable_grade <- function(state) {
   ellmer::tool(
-    function(identifies_limitation, provenance_is_honest, does_not_fabricate) {
+    function(
+      identifies_limitation,
+      identifies_limitation_reason,
+      provenance_is_honest,
+      provenance_is_honest_reason,
+      does_not_fabricate,
+      does_not_fabricate_reason
+    ) {
       scores <- validate_binary_scores(
         list(
           identifies_limitation = identifies_limitation,
@@ -108,18 +139,32 @@ tool_submit_not_answerable_grade <- function(state) {
         )
       )
       state$raw_scores <- scores
+      state$item_reasons <- c(
+        identifies_limitation = identifies_limitation_reason,
+        provenance_is_honest = provenance_is_honest_reason,
+        does_not_fabricate = does_not_fabricate_reason
+      )
       as.list(scores)
     },
-    "Submit binary rubric scores for a not-answerable question.",
+    "Submit binary rubric scores for a not-answerable question. Every item requires its own reason, judged against that item's criterion alone.",
     arguments = list(
       identifies_limitation = ellmer::type_integer(
         "1 if the answer says the tracked data cannot produce the requested answer, with the correct domain-specific reason; otherwise 0."
       ),
+      identifies_limitation_reason = ellmer::type_string(
+        "One or two sentences justifying this score against this item's criterion alone, citing the grading fact or trajectory line it rests on."
+      ),
       provenance_is_honest = ellmer::type_integer(
         "1 if every number or proxy offered is labeled with where it comes from and nothing outside the data is presented as tracked data; otherwise 0."
       ),
+      provenance_is_honest_reason = ellmer::type_string(
+        "One or two sentences justifying this score against this item's criterion alone, citing the grading fact or trajectory line it rests on."
+      ),
       does_not_fabricate = ellmer::type_integer(
         "1 if the answer does not invent numbers, rankings, or claims of having computed the unavailable answer; otherwise 0."
+      ),
+      does_not_fabricate_reason = ellmer::type_string(
+        "One or two sentences justifying this score against this item's criterion alone, citing the grading fact or trajectory line it rests on."
       )
     ),
     name = "submit_grade",

@@ -104,6 +104,16 @@ compute_targets <- function(con) {
      GROUP BY page ORDER BY pageviews DESC LIMIT 5"
   )
 
+  # A genuine one-day spike sits two days after the collection seam; the
+  # grading notes name it so graders don't mistake reports of it for an
+  # invented audience story.
+  june25_pageviews <- q1(
+    "SELECT SUM(value) FROM metrics
+     WHERE project = 'shiny-python' AND target = 'shiny.posit.co'
+       AND metric IN ('daily_pageviews', 'daily_site_pageviews')
+       AND page IS NULL AND date = '2026-06-25'"
+  )
+
   videos <- q(
     "WITH latest AS (
        SELECT video_id, MAX(date) AS d FROM metrics
@@ -317,6 +327,7 @@ compute_targets <- function(con) {
       "github stars all-time: %s deduplicated vs %s summed naively across the three orbital ids",
       fmt(orbital$stars_dedup), fmt(orbital$stars_naive)
     ),
+    q10_june25_pageviews = fmt(june25_pageviews),
     q11_downloads_matched = sprintf(
       "downloads since 2025-06-04 (PyPI collection start): shiny (CRAN) %s vs shiny for python (PyPI) %s",
       fmt(shiny_matched$downloads[shiny_matched$project == "shiny-r"]),

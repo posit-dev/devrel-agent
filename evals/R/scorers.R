@@ -105,6 +105,7 @@ score_rubric <- function(samples, scorer_chat) {
   })
 
   raw_scores <- lapply(seq_along(states), function(i) states[[i]]$raw_scores)
+  item_reasons <- lapply(seq_along(states), function(i) states[[i]]$item_reasons)
   score <- vapply(raw_scores, mean_raw_scores, numeric(1))
   response <- vapply(chats, grader_response_text, character(1))
 
@@ -112,12 +113,18 @@ score_rubric <- function(samples, scorer_chat) {
     score = score,
     scorer_chat = chats,
     scorer_metadata = Map(
-      function(prompt, response, raw_scores) {
-        list(prompt = prompt, response = response, raw_scores = raw_scores)
+      function(prompt, response, raw_scores, item_reasons) {
+        list(
+          prompt = prompt,
+          response = response,
+          raw_scores = raw_scores,
+          item_reasons = item_reasons
+        )
       },
       prompts,
       response,
-      raw_scores
+      raw_scores,
+      item_reasons
     )
   )
 }
@@ -212,11 +219,17 @@ rubric_grader_system_prompt <- function(category) {
     "",
     "Items about what the answer states (interpretations, caveats,",
     "limitations) are judged on the final answer text alone -- the user never",
-    "sees the trajectory. Justify each rubric item separately against its own",
-    "criterion; one flaw zeroes multiple items only when each item's",
-    "criterion is independently violated.",
+    "sees the trajectory. Each item is scored against its own criterion: an",
+    "answer can be wrong in one claim and still earn the items that claim",
+    "doesn't touch, and one flaw zeroes multiple items only when each item's",
+    "criterion is independently violated. When an item's reason asserts",
+    "something the solver did or didn't do, it must point to the specific",
+    "query or result in the trajectory; before asserting the answer misused",
+    "or mislabeled a metric, check that the grading facts actually contradict",
+    "the answer's usage.",
     "",
-    "Assess the answer item by item, then call `submit_grade` exactly once.",
+    "Assess the answer item by item, then call `submit_grade` exactly once,",
+    "with each item's reason addressing that item's criterion alone.",
     "Each grade item must be exactly 0 or 1.",
     "",
     "Rubric items:",
