@@ -19,6 +19,7 @@ run_eval <- function(
   epochs = 1,
   log_dir = "evals/logs",
   name = "devrel-commons",
+  solver_client = make_solver_client,
   make_solver = NULL,
   view = FALSE
 ) {
@@ -33,7 +34,7 @@ run_eval <- function(
   on.exit(try(DBI::dbDisconnect(con, shutdown = TRUE), silent = TRUE), add = TRUE)
 
   if (is.null(make_solver)) {
-    make_solver <- function() make_devrel_solver(con)
+    make_solver <- function() make_devrel_solver(con, client_factory = solver_client)
   }
 
   task <- vitals::Task$new(
