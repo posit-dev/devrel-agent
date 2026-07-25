@@ -40,6 +40,7 @@ score_devrel_answers <- function(samples, scorer_chat = make_grader_client()) {
 }
 
 score_numeric_like <- function(samples, scorer_chat) {
+  digests <- trajectory_digests(samples)
   prompts <- vapply(
     seq_len(nrow(samples)),
     function(i) {
@@ -47,7 +48,8 @@ score_numeric_like <- function(samples, scorer_chat) {
         input = samples$input[[i]],
         answer = samples$result[[i]],
         target = samples$target[[i]],
-        target_type = samples$target_type[[i]]
+        target_type = samples$target_type[[i]],
+        trajectory = digests[[i]]
       )
     },
     character(1)
@@ -62,7 +64,7 @@ score_numeric_like <- function(samples, scorer_chat) {
     chat
   })
 
-  response <- vapply(chats, last_assistant_text, character(1))
+  response <- vapply(chats, grader_response_text, character(1))
   score <- vapply(response, extract_score, numeric(1))
 
   list(
@@ -77,6 +79,7 @@ score_numeric_like <- function(samples, scorer_chat) {
 }
 
 score_rubric <- function(samples, scorer_chat) {
+  digests <- trajectory_digests(samples)
   prompts <- vapply(
     seq_len(nrow(samples)),
     function(i) {
@@ -84,7 +87,8 @@ score_rubric <- function(samples, scorer_chat) {
         input = samples$input[[i]],
         answer = samples$result[[i]],
         target = samples$target[[i]],
-        category = samples$category[[i]]
+        category = samples$category[[i]],
+        trajectory = digests[[i]]
       )
     },
     character(1)
@@ -102,7 +106,7 @@ score_rubric <- function(samples, scorer_chat) {
 
   raw_scores <- lapply(seq_along(states), function(i) states[[i]]$raw_scores)
   score <- vapply(raw_scores, mean_raw_scores, numeric(1))
-  response <- vapply(chats, last_assistant_text, character(1))
+  response <- vapply(chats, grader_response_text, character(1))
 
   list(
     score = score,
@@ -127,6 +131,14 @@ numeric_grader_system_prompt <- function() {
     "in the answer is enough; a formal declaration is not required). A correct",
     "number under an unstated interpretation caps the final score at 0.5.",
     "",
+    "The prompt includes the solver's tool trajectory (its queries and",
+    "truncated results). Use it only to establish where the answer's numbers",
+    "came from and what was actually queried -- e.g. whether a value reflects",
+    "a stated alternative window, or a missing filter the grading notes warn",
+    "about. The grading notes remain the ground truth for expected values, and",
+    "the interpretation must be stated in the answer itself, not merely",
+    "visible in a query.",
+    "",
     "Extract the submitted values and call `percent_error_score` against the",
     "matching interpretation's expected values. For tables, check required",
     "labels, score each required value, and call `average_scores` -- never",
@@ -139,7 +151,7 @@ numeric_grader_system_prompt <- function() {
   )
 }
 
-numeric_grader_prompt <- function(input, answer, target, target_type) {
+numeric_grader_prompt <- function(input, answer, target, target_type, trajectory) {
   paste(
     "[Question]",
     input,
@@ -149,6 +161,9 @@ numeric_grader_prompt <- function(input, answer, target, target_type) {
     "",
     "[Grading notes: accepted interpretations, expected values, adjustments]",
     target,
+    "",
+    "[Solver tool trajectory: provenance only; results truncated]",
+    trajectory,
     "",
     "[Submitted answer]",
     answer,
@@ -184,7 +199,24 @@ rubric_grader_system_prompt <- function(category) {
     "are correct; the facts also flag data artifacts (collection gaps, seams)",
     "that must not be graded as fabrication.",
     "",
-    "Briefly assess the answer, then call `submit_grade` exactly once.",
+    "The grading facts are a verified subset of the database, not an",
+    "inventory of it. The prompt includes the solver's tool trajectory (its",
+    "queries and truncated results); use it to establish provenance. A value,",
+    "name, or schema term absent from the facts but visible in the",
+    "trajectory's queries or results is unverified-but-real, not fabricated.",
+    "Fail a fabrication item only on positive evidence: a value that",
+    "contradicts the facts under the same stated scope, a claim of having",
+    "computed something the facts say is unavailable, or an attribution the",
+    "facts explicitly identify as wrong. A true caveat or mechanism the facts",
+    "don't mention is not an error.",
+    "",
+    "Items about what the answer states (interpretations, caveats,",
+    "limitations) are judged on the final answer text alone -- the user never",
+    "sees the trajectory. Justify each rubric item separately against its own",
+    "criterion; one flaw zeroes multiple items only when each item's",
+    "criterion is independently violated.",
+    "",
+    "Assess the answer item by item, then call `submit_grade` exactly once.",
     "Each grade item must be exactly 0 or 1.",
     "",
     "Rubric items:",
@@ -193,7 +225,7 @@ rubric_grader_system_prompt <- function(category) {
   )
 }
 
-rubric_grader_prompt <- function(input, answer, target, category) {
+rubric_grader_prompt <- function(input, answer, target, category, trajectory) {
   paste(
     "[Question]",
     input,
@@ -204,12 +236,91 @@ rubric_grader_prompt <- function(input, answer, target, category) {
     "[Grading facts]",
     target,
     "",
+    "[Solver tool trajectory: provenance only; results truncated]",
+    trajectory,
+    "",
     "[Submitted answer]",
     answer,
     "",
-    "Briefly assess the answer, then call `submit_grade` with binary 0/1 scores.",
+    "Assess the answer item by item, then call `submit_grade` with binary 0/1 scores.",
     sep = "\n"
   )
+}
+
+# The grader sees the solver's tool trajectory so provenance is checkable:
+# numbers from a real query under a stated alternative scope must not grade
+# as fabricated, and a query's actual scope (e.g. a missing dedup filter) is
+# visible. Results are truncated; provenance, not full content, is the point.
+trajectory_digests <- function(samples) {
+  chats <- samples$solver_chat
+  if (is.null(chats)) {
+    return(rep(list("(solver trajectory unavailable)"), nrow(samples)))
+  }
+  lapply(chats, solver_trajectory_digest)
+}
+
+solver_trajectory_digest <- function(chat, max_result_chars = 1500) {
+  if (is.null(chat)) {
+    return("(solver trajectory unavailable)")
+  }
+
+  lines <- character()
+  for (turn in chat$get_turns()) {
+    for (content in turn@contents) {
+      if (inherits(content, "ellmer::ContentToolRequest")) {
+        args <- tryCatch(
+          jsonlite::toJSON(content@arguments, auto_unbox = TRUE),
+          error = function(e) "<arguments unavailable>"
+        )
+        lines <- c(lines, paste0("TOOL CALL ", content@name, ": ", args))
+      } else if (inherits(content, "ellmer::ContentToolResult")) {
+        result <- truncate_chars(tool_result_text(content), max_result_chars)
+        lines <- c(lines, paste0("RESULT: ", result), "")
+      }
+    }
+  }
+
+  if (!length(lines)) {
+    return("(the solver made no tool calls)")
+  }
+  paste(lines, collapse = "\n")
+}
+
+tool_result_text <- function(result) {
+  error <- tryCatch(result@error, error = function(e) NULL)
+  if (!is.null(error)) {
+    return(paste0("<tool error: ", paste(format(error), collapse = " "), ">"))
+  }
+  value_text(result@value)
+}
+
+# Tool results are not always strings: commons tools can return ellmer
+# Content objects (text, images from run_r plots) or lists of them.
+value_text <- function(value) {
+  if (is.character(value)) {
+    return(paste(value, collapse = "\n"))
+  }
+  if (inherits(value, "ellmer::Content")) {
+    text <- tryCatch(ellmer::contents_text(value), error = function(e) NA_character_)
+    if (length(text) == 1 && !is.na(text) && nzchar(text)) {
+      return(text)
+    }
+    return(paste0("<", class(value)[[1]], ">"))
+  }
+  if (is.list(value)) {
+    return(paste(vapply(value, value_text, character(1)), collapse = "\n"))
+  }
+  tryCatch(
+    paste(format(value), collapse = "\n"),
+    error = function(e) paste0("<", class(value)[[1]], ">")
+  )
+}
+
+truncate_chars <- function(text, max_chars) {
+  if (nchar(text) <= max_chars) {
+    return(text)
+  }
+  paste0(substr(text, 1, max_chars), "\n<truncated>")
 }
 
 mean_raw_scores <- function(scores) {
@@ -220,16 +331,32 @@ mean_raw_scores <- function(scores) {
   mean(as.numeric(scores))
 }
 
+# Take the last match: grader arithmetic like "Final score: 0.9999 x 0.9"
+# earlier in the reply must not shadow the terminal SCORE line.
 extract_score <- function(text) {
-  match <- regexec("(?i)SCORE\\s*:\\s*([0-9]*\\.?[0-9]+)", text, perl = TRUE)
-  value <- regmatches(text, match)[[1]]
+  matches <- regmatches(
+    text,
+    gregexpr("(?i)score\\s*:\\s*([0-9]*\\.?[0-9]+)", text, perl = TRUE)
+  )[[1]]
 
-  if (length(value) < 2) {
+  if (!length(matches)) {
     return(NA_real_)
   }
 
-  score <- as.numeric(value[[2]])
+  score <- as.numeric(sub("(?i).*score\\s*:\\s*", "", matches[[length(matches)]], perl = TRUE))
   max(0, min(1, score))
+}
+
+grader_response_text <- function(chat) {
+  turns <- chat$get_turns()
+  texts <- vapply(
+    turns,
+    function(turn) {
+      if (inherits(turn, "ellmer::AssistantTurn")) turn@text else ""
+    },
+    character(1)
+  )
+  paste(texts[nzchar(texts)], collapse = "\n\n")
 }
 
 last_assistant_text <- function(chat) {

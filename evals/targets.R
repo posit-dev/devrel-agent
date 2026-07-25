@@ -94,6 +94,16 @@ compute_targets <- function(con) {
     ))
   }
 
+  # The duplicate id's page rows start at the 2026-06-23 seam, so a naive
+  # two-id sum doubles a recent window but inflates the full window only
+  # ~1.16x; the grading notes need both signatures to catch the double-count.
+  pages_naive_full <- q(
+    "SELECT page, SUM(value) AS pageviews FROM metrics
+     WHERE target = 'shiny.posit.co'
+       AND metric = 'daily_pageviews' AND page IS NOT NULL
+     GROUP BY page ORDER BY pageviews DESC LIMIT 5"
+  )
+
   videos <- q(
     "WITH latest AS (
        SELECT video_id, MAX(date) AS d FROM metrics
@@ -290,6 +300,7 @@ compute_targets <- function(con) {
     q05_per_video_sum = fmt(per_video$views),
     q06_pages_last31 = fmt_rows(pages("2026-06-23"), "page", "pageviews"),
     q06_pages_full = fmt_rows(pages("2026-03-02"), "page", "pageviews"),
+    q06_pages_naive_full = fmt_rows(pages_naive_full, "page", "pageviews"),
     q07_top_video = sprintf("\"%s\" with %s views", videos$title[1], fmt(videos$views[1])),
     q07_runner_up = sprintf("\"%s\" with %s views", videos$title[2], fmt(videos$views[2])),
     q08_cran_june = fmt(downloads_june("cran")),

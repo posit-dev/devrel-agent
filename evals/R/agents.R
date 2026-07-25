@@ -34,6 +34,12 @@ make_solver_client <- function() {
   ellmer::chat_anthropic(model = "claude-sonnet-5")
 }
 
+# Thinking is disabled for grading (as in bluffbench2's scorer): the
+# deterministic tools do the arithmetic, and default output budgets are
+# easily exhausted by thinking over long trajectory-bearing prompts.
 make_grader_client <- function() {
-  ellmer::chat_anthropic(model = "claude-sonnet-5")
+  ellmer::chat_anthropic(
+    model = "claude-sonnet-5",
+    api_args = list(thinking = list(type = "disabled"))
+  )
 }

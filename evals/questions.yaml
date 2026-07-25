@@ -90,12 +90,16 @@
     last 31 days of coverage: {q06_pages_last31}. Expected, full per-page
     coverage (2026-03-02 onward; identical to 2026 YTD): {q06_pages_full}.
     Grade the cited counts against the stated window's table. The site's
-    rows are duplicated under two project ids: answers roughly DOUBLE these
-    values (e.g. homepage ~25,990 on the 31-day window) double-counted the
-    duplicate id — score 0 for the values even if the page ranking is right,
-    since the ranking survives the double-count. Page identity and order
-    matter: homepage first, then the get-started lesson, then the gallery.
-    Noting the R vs Python section split is a plus, not required.
+    rows are duplicated under two project ids, and the duplicate id's page
+    rows begin only at the 2026-06-23 seam — so the double-count signature
+    depends on the window: recent windows roughly DOUBLE (e.g. homepage
+    ~25,990 on the 31-day window), while the full-coverage window inflates
+    ~1.16x, landing on {q06_pages_naive_full}. Values matching either
+    naive-sum pattern double-counted the duplicate id — score 0 for the
+    values even if the page ranking is right, since the ranking survives
+    the double-count. Page identity and order matter: homepage first, then
+    the get-started lesson, then the gallery. Noting the R vs Python
+    section split is a plus, not required.
 
 - id: q07
   category: numeric
@@ -141,8 +145,10 @@
     anchor: since CRAN release, since 2025-02-25, since PyPI coverage, or
     2026 YTD. Required: per-channel numbers consistent with the stated
     anchor (grade with percent_error_score against the matching facts),
-    and the two registries not silently combined. Star counts, if given,
-    should be near the deduplicated value, not the naive triple-count.
+    and the two registries not silently combined. Star counts are optional:
+    when the answer cites one, grade it against the deduplicated value (not
+    the naive triple-count); when the answer cites none, grade only the
+    values it does cite — do not average in a check for absent stars.
 
 - id: q10
   category: nuanced_answerable
@@ -248,19 +254,24 @@
   input: "who are the biggest contributors to shiny?"
   target: |
     Verified, counting non-star non-fork events across the shiny family
-    under deduplication: {q15_contributors}. The literal username "unknown"
-    appears high in any such ranking — it is an attribution artifact, and a
-    good answer excludes or flags it rather than reporting it as a person.
-    The shiny repo is tracked under multiple project ids; rankings must not
-    double-count them. The exact ranking depends on which event types count
-    as "contribution" (PR-only rankings put wch first with jcheng5 and
-    cpsievert following; including issues shifts counts but not the core
-    names) — accept any stated basis whose numbers check out; the core
-    names wch, jcheng5, cpsievert, schloerke should surface.
+    under deduplication: {q15_contributors}. The exact ranking depends on
+    which event types count as "contribution" and on scope: a stated
+    narrower scope (e.g. a single project id or repo) is acceptable, and
+    its counts will differ from the family-wide numbers above — verify
+    cited counts against the solver's trajectory rather than against this
+    list, and treat contributors absent from this list as real if they
+    appear in the trajectory's results. The core names wch, jcheng5,
+    cpsievert should surface under any reasonable basis. The literal
+    username "unknown" ranks high in family-wide rankings — it is an
+    attribution artifact; if it would surface in the answer's chosen scope,
+    a good answer excludes or flags it rather than reporting it as a
+    person; if it doesn't surface there, no flag is needed. Rankings must
+    not double-count the duplicate project ids.
     correct_logic = contributor ranking from events with real numbers.
-    filters_scope = no duplicate-id double-count; event-type basis stated.
-    interpretation_limits = "unknown" handled; basis stated. fabrication =
-    no invented contributors or counts.
+    filters_scope = scope stated and applied without duplicate-id
+    double-count. interpretation_limits = event-type basis stated;
+    "unknown" handled when it surfaces. fabrication = no invented
+    contributors or counts.
 
 - id: q16
   category: nuanced_answerable

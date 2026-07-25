@@ -22,6 +22,8 @@ q06_pages_last31: '/: 12,895; /r/getstarted/shiny-basics/lesson1/: 11,235; /r/ga
   8,049; /py/: 4,900; /py/get-started/: 2,156'
 q06_pages_full: '/: 81,365; /r/getstarted/shiny-basics/lesson1/: 68,445; /r/gallery/:
   48,889; /py/: 28,120; /py/get-started/: 13,896'
+q06_pages_naive_full: '/: 94,460; /r/getstarted/shiny-basics/lesson1/: 79,623; /r/gallery/:
+  56,517; /py/: 32,893; /py/get-started/: 15,950'
 q07_top_video: '"Machine Learning with R and TensorFlow" with 99,636 views'
 q07_runner_up: '"Get started with Quarto | Mine Çetinkaya-Rundel" with 85,067 views'
 q08_cran_june: '6,910,111'
