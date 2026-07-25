@@ -2,3 +2,4 @@ plans/
 inst/
 data/
 .env
+evals/logs/

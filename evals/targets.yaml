@@ -1,0 +1,73 @@
+snapshot_date: '2026-07-23'
+q01_june_2026: '1,804,733'
+q01_june_2025: '1,355,051'
+q02_monthly: '2024-07: 1,297,169; 2024-08: 1,286,280; 2024-09: 1,541,718; 2024-10:
+  1,867,897; 2024-11: 1,738,067; 2024-12: 1,402,758; 2025-01: 1,442,195; 2025-02:
+  1,528,318; 2025-03: 1,721,774; 2025-04: 1,764,018; 2025-05: 1,618,991; 2025-06:
+  1,355,051; 2025-07: 1,297,657; 2025-08: 1,450,092; 2025-09: 1,731,842; 2025-10:
+  1,966,350; 2025-11: 1,935,606; 2025-12: 1,691,702; 2026-01: 1,643,784; 2026-02:
+  1,581,067; 2026-03: 1,901,357; 2026-04: 2,031,789; 2026-05: 1,841,998; 2026-06:
+  1,804,733'
+q02_yearly: '2014: 142,957; 2015: 798,594; 2016: 1,673,594; 2017: 3,691,068; 2018:
+  5,615,992; 2019: 10,891,407; 2020: 15,498,015; 2021: 19,193,301; 2022: 22,386,865;
+  2023: 19,740,937; 2024: 18,138,349; 2025: 19,503,596; 2026: 12,002,974'
+q03_ytd_visitor_days: '198,682'
+q03_double_count: '394,957'
+q04_leaderboard: 'ggsql: 508; skills: 406; great-docs: 240; quarto: 237; cheatsheets:
+  169'
+q05_channel_views: '4,094,148'
+q05_channel_asof: '2026-07-23'
+q05_per_video_sum: '4,095,852'
+q06_pages_last31: '/: 12,895; /r/getstarted/shiny-basics/lesson1/: 11,235; /r/gallery/:
+  8,049; /py/: 4,900; /py/get-started/: 2,156'
+q06_pages_full: '/: 81,365; /r/getstarted/shiny-basics/lesson1/: 68,445; /r/gallery/:
+  48,889; /py/: 28,120; /py/get-started/: 13,896'
+q07_top_video: '"Machine Learning with R and TensorFlow" with 99,636 views'
+q07_runner_up: '"Get started with Quarto | Mine Çetinkaya-Rundel" with 85,067 views'
+q08_cran_june: '6,910,111'
+q08_pypi_june: '3,713,089'
+q09_cran: 'CRAN (orbital-r): series starts 2024-07-01, 8,163 total, 6,212 since 2025-02-25,
+  3,048 in 2026 YTD'
+q09_pypi: 'PyPI (orbital-python): series starts 2025-07-12 (collection began 2025-06),
+  28,538 total, 22,800 in 2026 YTD'
+q09_stars: 'github stars all-time: 111 deduplicated vs 341 summed naively across the
+  three orbital ids'
+q11_downloads_matched: 'downloads since 2025-06-04 (PyPI collection start): shiny
+  (CRAN) 8,420,523 vs shiny for python (PyPI) 3,430,544'
+q11_stars_yearly: '2023: rstudio/shiny 328 vs py-shiny 508; 2024: rstudio/shiny 272
+  vs py-shiny 551; 2025: rstudio/shiny 228 vs py-shiny 336; 2026: rstudio/shiny 46
+  vs py-shiny 37'
+q12_hadley_events: 'ellmer: 1,579; ggsql: 31; vitals: 4; shinychat: 1; querychat:
+  1'
+q12_ellmer_cran: '173,396'
+q12_ggsql_stars: '508'
+q13_joint_pr: shiny (hadley 83 / joe 417); ellmer (hadley 279 / joe 15); rsconnect
+  (hadley 274 / joe 6); shiny-r (hadley 46 / joe 218); dplyr (hadley 129 / joe 1);
+  leaflet (hadley 6 / joe 112); pins-r (hadley 85 / joe 2); pool (hadley 66 / joe
+  5)
+q14_dplyr_june: '1,804,733'
+q14_docs_visitors_june: '42,242'
+q15_contributors: 'wch: 4,008; jcheng5: 2,592; unknown: 2,267; cpsievert: 1,970; schloerke:
+  1,385; gadenbuie: 825'
+q16_star_gap: positron daily_stars has no rows between 2023-09-18 and 2024-03-05
+q16_visitors_first: '11,265'
+q16_visitors_last: '41,294'
+q17_latest_cran: 'latest CRAN day in the data: 2026-07-22, 228,433 downloads across
+  tracked packages'
+q18_pairs_ytd: chatlas 357,724 PyPI vs ellmer 90,672 CRAN; great-tables 3,287,116
+  PyPI vs gt 954,173 CRAN; pointblank-python 257,898 PyPI vs pointblank-r 33,571 CRAN;
+  orbital-python 22,800 PyPI vs orbital-r 3,048 CRAN; querychat 24,089 PyPI vs querychat
+  3,058 CRAN
+q18_shiny_matched: shiny (CRAN) 8,420,523 vs shiny for python (PyPI) 3,430,544 since
+  2025-06-04
+q18_matched_totals: 'across all six pairs since 2025-06-04: CRAN 11,082,589 vs PyPI
+  9,816,646'
+q19_tags: 21 of 466 projects have language tags; only 6 are tagged python
+q19_pypi_roster: chatlas, great-tables, orbital-python, plotnine, pointblank-python,
+  querychat, raghilda, shiny-python
+q20_positron_sources: github, plausible
+q21_may_videos: 18 videos were published in May 2026; their current cumulative lifetime
+  views total 28,260
+q24_tidyverse_repos: '5 tidyverse-org repos are tracked: tidyverse/dplyr, tidyverse/ellmer,
+  tidyverse/ggplot2, tidyverse/tidyverse, tidyverse/vitals'
+q26_workflows_target: posit-dev/Workflows
