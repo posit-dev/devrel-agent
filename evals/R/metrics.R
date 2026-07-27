@@ -30,13 +30,38 @@ sample_tokens <- function(chat, column) {
   sum(tokens[[column]], na.rm = TRUE)
 }
 
+# Agent solvers call the model inside a sandbox rather than through ellmer, so
+# their reconstructed chats under-count; `model_usage` is the real tally.
+metadata_tokens <- function(metadata, field) {
+  usage <- metadata$model_usage
+  if (is.null(usage)) {
+    return(NA_real_)
+  }
+  sum(vapply(usage, function(x) as.numeric(x[[field]] %||% 0), numeric(1)))
+}
+
 augment_sample_metrics <- function(samples) {
   samples$latency_sec <- vapply(samples$solver_chat, sample_latency_sec, numeric(1))
   samples$cost_usd <- vapply(samples$solver_chat, sample_cost_usd, numeric(1))
-  samples$input_tokens <- vapply(samples$solver_chat, sample_tokens, numeric(1), column = "input")
-  samples$cached_input_tokens <- vapply(samples$solver_chat, sample_tokens, numeric(1), column = "cached_input")
-  samples$output_tokens <- vapply(samples$solver_chat, sample_tokens, numeric(1), column = "output")
+  samples$input_tokens <- sample_token_column(samples, "input", "input_tokens")
+  samples$cached_input_tokens <- sample_token_column(
+    samples,
+    "cached_input",
+    "input_tokens_cache_read"
+  )
+  samples$output_tokens <- sample_token_column(samples, "output", "output_tokens")
   samples
+}
+
+sample_token_column <- function(samples, chat_column, usage_field) {
+  from_chat <- vapply(samples$solver_chat, sample_tokens, numeric(1), column = chat_column)
+  metadata <- samples$solver_metadata
+  if (is.null(metadata)) {
+    return(from_chat)
+  }
+
+  from_usage <- vapply(metadata, metadata_tokens, numeric(1), field = usage_field)
+  ifelse(is.na(from_usage), from_chat, from_usage)
 }
 
 summarise_by_category <- function(samples) {

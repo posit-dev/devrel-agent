@@ -1,0 +1,13 @@
+services:
+  default:
+    build:
+      context: ../../inst/devrel-io
+      dockerfile: ../../evals/sandbox/Dockerfile
+    image: devrel-io-sandbox
+    init: true
+    command: ["sleep", "infinity"]
+    # Closed-book, structurally: with no egress the repo is the only source of
+    # figures the agent can reach. Inspect's model proxy runs inside the
+    # container and tunnels over the sandbox exec channel, and the Claude Code
+    # binary is written in from the host, so neither needs the network.
+    network_mode: none
