@@ -1,8 +1,9 @@
 # Crawl opensource.posit.co into one markdown file per page for the agent's
-# context layer (see agent.R). Only the /software/<slug> and /about pages are
-# kept: they carry the prose describing what each project is, which the
-# metrics tables lack. The listing/browse sections (resources, people, tags,
-# events, topics, languages) would mostly add BM25 noise for a metrics agent.
+# context layer (see agent.R). Only the /software/<slug>, /about, and
+# /blog/<slug> pages are kept: they carry the prose describing what each
+# project is and what's been announced, which the metrics tables lack. The
+# listing/browse sections (resources, people, tags, events, topics,
+# languages) would mostly add BM25 noise for a metrics agent.
 #
 # Each file opens with frontmatter recording the source URL and retrieval
 # date; commons strips frontmatter before indexing, so it's provenance for
@@ -62,15 +63,15 @@ build_devrel_context <- function(output_dir = "context/opensource-posit-co") {
 filter_context_urls <- function(urls) {
   urls <- urls[!grepl("[?#]", urls)]
   top <- sub("/.*", "", sub(base_url, "", urls, fixed = TRUE))
-  urls[top %in% c("software", "about")]
+  urls[top %in% c("software", "about", "blog")]
 }
 
-# Leaf pages only: /software/ itself is a listing, while /about/ is a real
-# overview page.
+# Leaf pages only: /software/ and /blog/ themselves are listings, while
+# /about/ is a real overview page.
 keep_context_pages <- function(links) {
   links <- sub("/$", "", filter_context_urls(links))
   paths <- sub(base_url, "", links, fixed = TRUE)
-  unique(links[grepl("^software/.|^about", paths)])
+  unique(links[grepl("^software/.|^about|^blog/.", paths)])
 }
 
 page_filename <- function(url) {
