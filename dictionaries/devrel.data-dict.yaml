@@ -74,7 +74,9 @@ tables:
       posit/shiny OpenVSX extension and the shiny.posit.co Plausible site
       under both `shiny-python` and `shiny-r`. Sums across projects must
       count each (source, target) once — apply the {{deduplicated}} filter,
-      which keeps the shared extension and site under `shiny-python`. For a
+      which keeps the shared extension and site under `shiny-python`. The
+      copies can disagree slightly on a few days (collection-timing noise,
+      worst for shiny.posit.co just after the 2026-06-23 seam). For a
       single project, prefer the curated id (`shiny-r`, `shiny-python`,
       `orbital-r`, `orbital-python`, `pointblank-python`); for
       shiny.posit.co traffic specifically, query project `shiny-python` or
@@ -82,8 +84,9 @@ tables:
     columns:
       - name: project
         type: string
+        constraints: [foreign_key]
         examples: [dplyr, quarto, shiny-python, positron]
-        description: Project id; join key to projects.id.
+        description: Project id.
       - name: source
         type: enum
         values: [cran, pypi, plausible, openvsx, youtube, github]
@@ -116,7 +119,7 @@ tables:
           total_downloads: cumulative extension downloads (openvsx)
           total_ratings: cumulative rating count (openvsx)
           total_reviews: cumulative review count (openvsx)
-          total_views: cumulative views per video (join video_id to content.id) (youtube)
+          total_views: cumulative views per video (youtube)
           total_likes: cumulative likes per video (youtube)
           total_comments: cumulative comments per video (youtube)
           total_channel_views: cumulative channel views (youtube)
@@ -136,9 +139,9 @@ tables:
           every other row, including site-level Plausible rows.
       - name: video_id
         type: string
+        constraints: [foreign_key]
         description: >-
-          YouTube video id for per-video rows; join key to content.id. NULL
-          for every other row.
+          YouTube video id for per-video rows; NULL for every other row.
     definitions:
       # Provenance: duplicate-target audit of the data, 2026-07-24
       # (SELECT source, target ... HAVING COUNT(DISTINCT project) > 1).
@@ -270,7 +273,8 @@ tables:
     columns:
       - name: project
         type: string
-        description: Project id; join key to projects.id.
+        constraints: [foreign_key]
+        description: Project id.
       - name: source
         type: enum
         values: [cran, pypi, plausible, openvsx, youtube, github]
@@ -289,9 +293,10 @@ tables:
         description: Last observed cumulative value as of that day (total_*), or the daily amount.
       - name: video_id
         type: string
+        constraints: [foreign_key]
         description: >-
-          YouTube video id for per-video series (total_views etc.); join key
-          to content.id. NULL otherwise.
+          YouTube video id for per-video series (total_views etc.); NULL
+          otherwise.
       - name: page
         type: string
         description: URL path for per-page Plausible series; NULL otherwise.
@@ -332,7 +337,8 @@ tables:
     columns:
       - name: project
         type: string
-        description: Project id; join key to projects.id.
+        constraints: [foreign_key]
+        description: Project id.
       - name: source
         type: enum
         values: [cran, pypi, plausible, openvsx, youtube, github]
@@ -379,6 +385,18 @@ tables:
       appear under two project ids with duplicated events (see metrics);
       apply the {{deduplicated}} filter when counting across projects.
     columns:
+      - name: project
+        type: string
+        constraints: [foreign_key]
+        description: Project id.
+      - name: source
+        type: enum
+        values: [github]
+        description: Collection source; always github.
+      - name: target
+        type: string
+        examples: [tidyverse/dplyr, rstudio/shiny]
+        description: GitHub repo slug.
       - name: type
         type: enum
         values: [star, fork, issue_open, issue_close, issue_comment, pr_open, pr_merge, pr_comment]
@@ -431,13 +449,12 @@ tables:
       Catalog of the @PositPBC YouTube channel: one row per video with
       title, description, publish time, URL, and duration (seconds).
     details: >-
-      Join to per-video metrics with video_id = content.id (use
-      metrics_filled for the cumulative view counts).
+      Use metrics_filled for the cumulative per-video view counts.
     columns:
       - name: id
         type: string
         constraints: [primary_key]
-        description: YouTube video id; join target for metrics.video_id.
+        description: YouTube video id.
       - name: title
         type: string
         description: Video title.
@@ -460,6 +477,12 @@ tables:
 
 relationships:
   - join: metrics.project = projects.id
+    cardinality: many-to-one
+  - join: metrics_filled.project = projects.id
+    cardinality: many-to-one
+  - join: indicators.project = projects.id
+    cardinality: many-to-one
+  - join: events.project = projects.id
     cardinality: many-to-one
   - join: metrics.video_id = content.id
     cardinality: many-to-one
