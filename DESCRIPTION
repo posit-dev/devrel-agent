@@ -1,0 +1,28 @@
+Package: devrelagent
+Title: DevRel Data Agent
+Version: 0.0.0.9000
+Authors@R:
+    person("Simon", "Couch", , "simon.couch@posit.co", role = c("aut", "cre"))
+Description: A self-service data science agent for DevRel, built on commons.
+License: MIT
+Encoding: UTF-8
+Imports:
+    bslib,
+    cli,
+    commons,
+    DBI,
+    dplyr,
+    duckdb,
+    ellmer,
+    glue,
+    jsonlite,
+    later,
+    prettyunits,
+    promises,
+    rlang,
+    shiny,
+    tibble,
+    vitals,
+    yaml
+Remotes:
+    posit-dev/commons#48
