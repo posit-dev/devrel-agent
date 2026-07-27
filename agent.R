@@ -26,5 +26,15 @@ devrel_agent <- commons(
       ),
       dictionary = "dictionaries/devrel.data-dict.yaml"
     )
+  ),
+  # Project and site prose crawled from opensource.posit.co by
+  # etl/build-context.R.
+  context_layer = context_layer(
+    files = list.files(
+      "context",
+      pattern = "[.]md$",
+      recursive = TRUE,
+      full.names = TRUE
+    )
   )
 )

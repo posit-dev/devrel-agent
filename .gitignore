@@ -1,5 +1,6 @@
 plans/
 inst/
+context/
 data/
 .env
 evals/logs/
