@@ -5,9 +5,12 @@ name: Posit open source devrel metrics
 description: >-
   Daily adoption and engagement metrics for Posit's open source projects,
   collected by velocirepo from CRAN, PyPI, Plausible (website analytics),
-  OpenVSX, YouTube, and GitHub. Time series run from as early as 2008
-  (GitHub events) through yesterday; the `meta` table records the exact
-  as-of date. This is public data about public projects.
+  OpenVSX, YouTube, GitHub, and the opensource.posit.co RSS feeds, plus a
+  catalog of the things behind those numbers (GitHub issues and pull
+  requests, repos, YouTube videos, blog posts, and site entities) in
+  `content`. Time series run from as early as 2008 (GitHub events) through
+  yesterday; the `meta` table records the exact as-of date. This is public
+  data about public projects.
 details: >-
   Metric naming carries the core rule: `daily_*` values are per-day amounts
   and sum safely across days; `total_*` values are cumulative snapshots and
@@ -16,31 +19,46 @@ details: >-
   {{net_increase}} over a date range. Route questions accordingly: governed
   metrics and filters first (query_metrics, or {{name}} tokens in SQL);
   `metrics` for daily series; `metrics_filled` for anything `total_*`;
-  `indicators` for pre-computed 28-day growth and trend; `events` only when
-  per-user or per-timestamp detail matters; `projects` to resolve project
-  names. Sources count differently (e.g. CRAN and PyPI treat mirrors,
-  caching, and bots differently), so compare levels across sources with
-  caution. A metric series starting on some date usually means collection
-  started then, not that the project launched then. A few repos and sites
-  are tracked under more than one project id with duplicated values —
-  never aggregate across projects without the {{deduplicated}} filter.
+  `indicators` for pre-computed 28-day growth and trend; `events` when
+  per-user or per-timestamp detail matters; `content` for the titles, text,
+  authors, and states behind the counts ("which issues", "what did we
+  publish"); `projects` to resolve project names. Sources count differently
+  (e.g. CRAN and PyPI treat mirrors, caching, and bots differently), so
+  compare levels across sources with caution. A metric series starting on
+  some date usually means collection started then, not that the project
+  launched then. A few repos and sites are tracked under more than one
+  project id with duplicated values — never aggregate across projects
+  without the {{deduplicated}} filter. GitHub star history is missing
+  entirely from this snapshot (see the `stars` glossary entry); star
+  questions cannot be answered.
 
 version:
-  date: '2026-07-24'
+  date: '2026-07-29'
 
 tables:
   - name: metrics
     description: >-
       Unified daily time series across all sources. One row per project x
-      source x target x metric x date (x page or video_id, for per-page and
-      per-video series). Includes GitHub daily counts derived from the
-      `events` table.
+      source x target x metric x date (x page, video_id, or ref, for
+      per-page, per-video, and per-issue series). Includes GitHub daily
+      counts derived from the `events` table.
     details: >-
       Coverage varies by source: CRAN daily downloads since 2012-10 (13
       packages), PyPI daily downloads since 2025-06 (8 packages), Plausible
       website analytics since 2021-12 (16 sites), OpenVSX totals since
-      2026-01 (6 extensions), YouTube totals since 2026-06-25 (one channel),
-      GitHub daily event counts since 2008 (~420 repos).
+      2026-01 (6 extensions), YouTube totals since 2026-06-25 (one channel,
+      1,518 videos), GitHub daily event counts since 2009 (~350 repos),
+      GitHub total_reactions per issue/PR since 2026-07-27, and RSS
+      total_items for the five opensource.posit.co feeds since 2026-07-27.
+
+      A 2026-07-28 refetch upstream damaged GitHub coverage in two ways that
+      have not been repaired. Every star event was dropped, so there are no
+      `daily_stars` rows at all; say so rather than substituting forks or
+      another metric. And 22 repos lost their GitHub history entirely,
+      including three prominent ones — posit-dev/positron,
+      quarto-dev/quarto-cli, and rstudio/rstudio — so those projects now
+      have only website or extension metrics. Check which sources cover a
+      project before reading a GitHub silence as inactivity.
 
       Plausible rows need care. daily_pageviews/daily_visitors/daily_visits
       rows with `page IS NULL` (2021-12-08 to 2026-06-22) are SITE-level;
@@ -53,18 +71,24 @@ tables:
       exactly to site pageviews; per-page visitors do NOT sum to site
       visitors (visitors deduplicate across pages).
 
-      devrel-io switched collection systems on 2026-06-23, and some GitHub
-      series change behavior at that seam: daily_issue_comment and
-      daily_pr_comment END at 2026-06-22 (frozen history), and
-      daily_issues_closed (mildly: daily_prs_merged) systematically
-      UNDERCOUNTS after the seam because closes are only recorded for
-      recently-created issues. Avoid presenting issue-close trends across
-      mid-2026. Star events currently lag other sources by ~2 days, and
-      cumulative star sums drift from live GitHub counts by up to ~10%.
-      The CRAN series is missing ~13 scattered days over the last two years
-      (days where cranlogs hadn't yet published when the daily fetch ran;
-      they are never backfilled), so range sums slightly undercount and can
-      differ from cranlogs' own current totals.
+      devrel-io switched collection systems on 2026-06-23, which still
+      splits the Plausible site-level series in two (see above), but the
+      GitHub event series were refetched over their full history on
+      2026-07-28 and now run continuously: issue and PR comments are one
+      `daily_comments` series through yesterday, and issue-close counts no
+      longer undercount after mid-2026. The CRAN series is missing ~7
+      scattered days over the last two years (days where cranlogs hadn't
+      yet published when the daily fetch ran; they are never backfilled),
+      so range sums slightly undercount and can differ from cranlogs' own
+      current totals.
+
+      total_reactions is per issue/PR, not per project: one row per
+      (project, target, ref) carrying that issue's or PR's reaction count,
+      backfilled for every open and closed item on 2026-07-27 and updated
+      only for items touched since. Read the latest value per ref (or use
+      metrics_filled) and join to `content` on project, target, and ref for
+      titles; a single-day sum silently covers only the items fetched that
+      day. Most items have zero reactions.
 
       Some targets are tracked under multiple project ids with DUPLICATED
       values: rstudio/shiny events appear under both `shiny` and `shiny-r`;
@@ -89,15 +113,15 @@ tables:
         description: Project id.
       - name: source
         type: enum
-        values: [cran, pypi, plausible, openvsx, youtube, github]
+        values: [cran, pypi, plausible, openvsx, youtube, github, rss]
         description: Collection source.
       - name: target
         type: string
         examples: [dplyr, dplyr.tidyverse.org, tidyverse/dplyr, posit/air-vscode]
         description: >-
           Source-specific identifier: CRAN/PyPI package name, Plausible
-          domain, GitHub repo slug, OpenVSX extension id, or YouTube channel
-          handle.
+          domain, GitHub repo slug, OpenVSX extension id, YouTube channel
+          handle, or RSS feed URL.
       - name: metric
         type: enum
         values:
@@ -108,14 +132,14 @@ tables:
           daily_site_pageviews: site-wide pageviews, since 2026-03-02 (plausible)
           daily_site_visitors: site-wide unique visitors, since 2026-03-02 (plausible)
           daily_site_visits: site-wide visits, since 2026-03-02 (plausible)
-          daily_stars: GitHub stars gained that day, derived from events
           daily_forks: forks created that day
           daily_issues_opened: issues opened that day
-          daily_issues_closed: issues closed that day; undercounts after 2026-06-22
+          daily_issues_closed: issues closed that day
           daily_prs_opened: PRs opened that day
           daily_prs_merged: PRs merged that day
-          daily_issue_comment: issue comments; series ends 2026-06-22
-          daily_pr_comment: PR comments; series ends 2026-06-22
+          daily_comments: issue and PR comments that day, one combined series
+          total_reactions: reactions on one issue or PR, keyed by ref (github)
+          total_items: items in an RSS feed (rss)
           total_downloads: cumulative extension downloads (openvsx)
           total_ratings: cumulative rating count (openvsx)
           total_reviews: cumulative review count (openvsx)
@@ -142,6 +166,11 @@ tables:
         constraints: [foreign_key]
         description: >-
           YouTube video id for per-video rows; NULL for every other row.
+      - name: ref
+        type: number(quantity)
+        description: >-
+          GitHub issue or PR number for total_reactions rows; NULL for every
+          other row. Joins to content.ref within a project and target.
     definitions:
       # Provenance: duplicate-target audit of the data, 2026-07-24
       # (SELECT source, target ... HAVING COUNT(DISTINCT project) > 1).
@@ -190,9 +219,9 @@ tables:
         type: boolean
         label: before the 2026-06-23 collection seam
         description: >-
-          Rows collected before the 2026-06-23 collection-system migration.
-          Clamp issue-close and comment trend questions here; those series
-          break at the seam.
+          Rows collected before the 2026-06-23 collection-system migration,
+          where the original site-level Plausible rows (page IS NULL) end.
+          Use when a question needs one Plausible collection era only.
         expr: date <= '2026-06-22'
       - name: traffic_metric
         type: string
@@ -249,15 +278,6 @@ tables:
         expr: >-
           SUM(value) FILTER (WHERE site_traffic
             AND traffic_metric = 'daily_visits' AND deduplicated)
-      - name: stars_gained
-        type: number(quantity)
-        label: unbounded = current star total
-        description: >-
-          GitHub stars gained (sum of daily_stars), deduplicated. With no
-          date constraint this is the current star total. Star counts are
-          approximate: within ~10% of live GitHub, usually much closer,
-          and star events lag other sources by ~2 days.
-        expr: SUM(value) FILTER (WHERE metric = 'daily_stars' AND deduplicated)
 
   - name: metrics_filled
     description: >-
@@ -270,6 +290,10 @@ tables:
       is carried forward to each day through the most recent fetch, so "the
       value on date X" and "current value" queries are correct. daily_*
       rows pass through unchanged and are NOT gap-filled.
+
+      total_reactions is filled per issue/PR (project x target x ref), which
+      is the reliable way to read reaction counts: the raw metrics table
+      only carries a row on the day an item was fetched.
     columns:
       - name: project
         type: string
@@ -277,7 +301,7 @@ tables:
         description: Project id.
       - name: source
         type: enum
-        values: [cran, pypi, plausible, openvsx, youtube, github]
+        values: [cran, pypi, plausible, openvsx, youtube, github, rss]
         description: Collection source.
       - name: target
         type: string
@@ -300,8 +324,13 @@ tables:
       - name: page
         type: string
         description: URL path for per-page Plausible series; NULL otherwise.
+      - name: ref
+        type: number(quantity)
+        description: >-
+          GitHub issue or PR number for total_reactions series; NULL
+          otherwise.
     definitions:
-      # Same duplicate-target audit as metrics.deduplicated (2026-07-24).
+      # Same duplicate-target audit as metrics.deduplicated (2026-07-29).
       - name: deduplicated
         type: boolean
         label: apply to any cross-project aggregate
@@ -341,11 +370,15 @@ tables:
         description: Project id.
       - name: source
         type: enum
-        values: [cran, pypi, plausible, openvsx, youtube, github]
-        description: Collection source.
+        values: [cran, pypi, plausible, github]
+        description: >-
+          Collection source. Only sources with daily_* series appear;
+          OpenVSX, YouTube, and RSS report totals only.
       - name: metric
         type: string
-        description: The daily_* metric the indicator is computed over.
+        description: >-
+          The daily_* metric the indicator is computed over: downloads,
+          Plausible traffic, or the GitHub activity series.
       - name: date
         type: date
         description: The day the trailing windows end.
@@ -374,16 +407,21 @@ tables:
 
   - name: events
     description: >-
-      Individual GitHub events since 2008 with timestamp and username. Use
-      for per-user or sub-daily detail; for counts over time, prefer the
-      derived daily_* metrics.
+      Individual GitHub events since 2009 with timestamp, acting username,
+      and the issue or PR number they happened on. Use for per-user or
+      sub-daily detail; for counts over time, prefer the derived daily_*
+      metrics.
     details: >-
-      Each event records only the acting username; there is no issue/PR
-      number or title, so "which issues" questions cannot be answered, only
-      "how many" and "by whom". Comment events end 2026-06-22, and
-      issue_close undercounts after that date (see metrics). Some repos
-      appear under two project ids with duplicated events (see metrics);
-      apply the {{deduplicated}} filter when counting across projects.
+      Join `ref` to content.ref (within a project and target) for the title,
+      body, author, and state of the issue or PR an event happened on, so
+      "which issues" questions are answerable here; fork events have no ref.
+      There are no star events (see the `stars` glossary entry). Comment
+      events are one `comment` type covering both issues and PRs. username
+      is NULL for a few hundred events whose actor GitHub no longer reports
+      (deleted accounts), and it is the ACTING user, not the issue's author
+      — content.author is authorship. Some repos appear under two project
+      ids with duplicated events (see metrics); apply the {{deduplicated}}
+      filter when counting across projects.
     columns:
       - name: project
         type: string
@@ -399,17 +437,23 @@ tables:
         description: GitHub repo slug.
       - name: type
         type: enum
-        values: [star, fork, issue_open, issue_close, issue_comment, pr_open, pr_merge, pr_comment]
-        description: Event type.
+        values: [fork, issue_open, issue_close, pr_open, pr_merge, comment]
+        description: Event type; comment covers issue and PR comments alike.
       - name: datetime
-        type: string
+        type: datetime
         description: Event timestamp, UTC.
+      - name: ref
+        type: number(quantity)
+        constraints: [foreign_key]
+        description: >-
+          Issue or PR number the event happened on; NULL for fork events.
       - name: username
         type: string
         description: >-
-          GitHub login of the acting user ('unknown' for some events).
+          GitHub login of the acting user; NULL where GitHub no longer
+          reports one.
     definitions:
-      # Same duplicate-target audit as metrics.deduplicated (2026-07-24).
+      # Same duplicate-target audit as metrics.deduplicated (2026-07-29).
       - name: deduplicated
         type: boolean
         label: apply to any cross-project aggregate
@@ -430,7 +474,7 @@ tables:
     details: >-
       466 projects are listed, but only ~20 curated ones have package/site
       metrics; the rest are GitHub-only repos across the posit-dev, rstudio,
-      tidyverse, and quarto-dev orgs (49 have no data at all yet). Which
+      tidyverse, and quarto-dev orgs (68 have no metrics at all yet). Which
       sources cover a project is best read from the data, e.g.
       SELECT DISTINCT source FROM metrics WHERE project = 'ellmer'.
     columns:
@@ -446,27 +490,130 @@ tables:
 
   - name: content
     description: >-
-      Catalog of the @PositPBC YouTube channel: one row per video with
-      title, description, publish time, URL, and duration (seconds).
+      Catalog of the things the metrics count: GitHub issues, pull requests,
+      and repos; @PositPBC YouTube videos; and the opensource.posit.co blog
+      posts, resources, software entries, people, and events. One row per
+      item, with title, body text, author, state, timestamps, and URL.
     details: >-
-      Use metrics_filled for the cumulative per-video view counts.
+      Row counts by type: 51,175 GitHub issues and 42,162 PRs (from 2009,
+      across ~350 repos, both open and closed), 462 GitHub repos, 1,711 site
+      resources, 1,518 YouTube videos, 990 blog posts (from 2012), 368
+      software entries, 173 people, 31 events. The `type` column is the way
+      in; `source` (github, youtube, rss) is coarser.
+
+      `description` and `content` hold full body text — issue and PR bodies,
+      whole blog posts — so they are large. Search them with LIKE or
+      selective columns; never SELECT them across many rows.
+
+      Issues and PRs join to `events` and to total_reactions rows on
+      (project, target, ref); YouTube videos join to per-video metrics on
+      content.id = metrics.video_id. Issue and PR rows are duplicated under
+      the alternate project ids described in metrics, so apply
+      {{deduplicated}} to any count spanning projects.
+
+      Content freshness differs from the metric as-of date: issues and PRs
+      are re-upserted at each fetch, so state and updated_at reflect the
+      fetch, not the snapshot date.
     columns:
+      - name: project
+        type: string
+        constraints: [foreign_key]
+        description: Project id.
+      - name: source
+        type: enum
+        values: [github, youtube, rss]
+        description: Where the item came from.
+      - name: type
+        type: enum
+        values:
+          issue: GitHub issue
+          pr: GitHub pull request
+          repo: GitHub repository, one per tracked project
+          video: YouTube video on @PositPBC
+          post: opensource.posit.co blog post
+          resource: site resource (video, talk, book, ...)
+          software: site software entry, one per listed project
+          person: site person page
+          event: site event listing, including upcoming ones
+        description: What kind of item the row describes.
+      - name: target
+        type: string
+        examples: [tidyverse/dplyr, '@PositPBC']
+        description: >-
+          Repo slug, channel handle, or feed URL the item came from, as in
+          metrics.
       - name: id
         type: string
         constraints: [primary_key]
-        description: YouTube video id.
+        examples: [issue/7849, ML3q7Ok4hJg, blog/2026-07-23_ir-0-1-0]
+        description: >-
+          Source-specific id: 'issue/<n>' or 'pr/<n>' for GitHub, the video
+          id for YouTube, the path-like slug for site entities.
+      - name: ref
+        type: number(quantity)
+        constraints: [foreign_key]
+        description: >-
+          Issue or PR number; NULL for everything else.
       - name: title
         type: string
-        description: Video title.
-      - name: published_at
+        description: Issue/PR title, video title, or page title.
+      - name: description
         type: string
-        description: Publish timestamp, UTC.
+        description: >-
+          Issue/PR body, video description, or the item's summary. Long
+          text.
+      - name: content
+        type: string
+        description: >-
+          Full body text, populated for site posts, resources, software, and
+          events only. Long text.
+      - name: author
+        type: string
+        description: >-
+          GitHub login that opened the issue or PR; NULL for other types.
+      - name: state
+        type: enum
+        values: [OPEN, CLOSED, MERGED]
+        description: >-
+          Issue or PR state as of the last fetch (PRs use MERGED for merged,
+          CLOSED for closed unmerged); NULL for other types.
+      - name: published_at
+        type: datetime
+        description: >-
+          When the item was opened or published; NULL for people and
+          software pages. Site events use the event date, which can be in
+          the future.
+      - name: updated_at
+        type: datetime
+        description: When the item last changed, where the source reports it.
+      - name: url
+        type: string
+        description: Link to the issue, PR, video, or page.
       - name: duration
         type: number(quantity)
-        description: Video length in seconds.
+        description: Video length in seconds; NULL for other types.
       - name: tags
         type: string
         description: Keyword list as text, e.g. for LIKE searches by topic.
+      - name: extra
+        type: string
+        description: >-
+          Leftover source-specific fields as JSON text, differing by type
+          (repo language and license, event location and dates, resource
+          view counts, person social links). Inspect a row before relying on
+          a key.
+    definitions:
+      # Same duplicate-target audit as metrics.deduplicated (2026-07-29).
+      - name: deduplicated
+        type: boolean
+        label: apply to any cross-project aggregate
+        description: >-
+          Counts each item exactly once; a few repos file their issues and
+          PRs under two or three project ids (see metrics). Apply to any
+          count that spans projects.
+        expr: >-
+          project NOT IN ('shiny', 'py-shiny', 'orbital', 'pointblank')
+          AND NOT (project = 'orbital-python' AND source = 'github')
 
   - name: meta
     description: >-
@@ -484,6 +631,8 @@ relationships:
     cardinality: many-to-one
   - join: events.project = projects.id
     cardinality: many-to-one
+  - join: content.project = projects.id
+    cardinality: many-to-one
   - join: metrics.video_id = content.id
     cardinality: many-to-one
     description: YouTube per-video metrics to the video catalog.
@@ -492,6 +641,16 @@ relationships:
     description: >-
       Cumulative per-video series (total_views etc.) to the video catalog;
       the usual join for video leaderboards.
+  - join: events.ref = content.ref
+    cardinality: many-to-one
+    description: >-
+      Events to the issue or PR they happened on. Numbers repeat across
+      repos, so match on project and target too.
+  - join: metrics.ref = content.ref
+    cardinality: many-to-one
+    description: >-
+      total_reactions rows to the issue or PR they count reactions for; also
+      match on project and target.
 
 glossary:
   project: >-
@@ -500,23 +659,36 @@ glossary:
     both CRAN and PyPI; disambiguate with the source column).
   source vs target: >-
     source is where a number came from (cran, pypi, plausible, openvsx,
-    youtube, github); target is the source-specific identifier there
-    (package name, domain, repo slug, extension id, channel handle).
+    youtube, github, rss); target is the source-specific identifier there
+    (package name, domain, repo slug, extension id, channel handle, feed
+    URL).
   daily_* vs total_*: >-
     daily_* is a per-day amount (summable); total_* is a cumulative
     snapshot (never sum across days; use metrics_filled or difference it).
   2026-06-23 migration seam: >-
-    devrel-io switched collection systems that day. Comment events end
-    2026-06-22, the original site-level Plausible rows (page IS NULL) end
-    there, and issue-close counts undercount afterward. Treat trends that
-    straddle mid-2026 for those series with suspicion.
+    devrel-io switched collection systems that day. The original site-level
+    Plausible rows (page IS NULL) end there and daily_site_* begins, so
+    treat site-traffic trends that straddle mid-2026 with care (the
+    site_traffic and traffic_metric definitions handle it). The GitHub
+    series were refetched over full history afterward and no longer break
+    at the seam.
+  open-source-website: >-
+    The project id for opensource.posit.co itself: its Plausible traffic,
+    its five RSS feeds (total_items), and the blog posts, resources,
+    software entries, people, and events those feeds carry in `content`.
+  reactions: >-
+    total_reactions counts emoji reactions on a single issue or PR, keyed
+    by ref, backfilled once on 2026-07-27. It is not a project-level
+    metric; aggregate it by taking the latest value per ref.
   posit: >-
     The project id for the @PositPBC YouTube channel itself, not a
     repository or package.
   positron: >-
     Positron is a desktop IDE distributed as installers, not an R/Python
-    package: it has GitHub and website metrics but no CRAN or PyPI
-    downloads. Download counts for it cannot be answered from this data.
+    package, so it has no CRAN or PyPI downloads; download counts for it
+    cannot be answered from this data. Its GitHub history was also lost in
+    the 2026-07-28 refetch, leaving positron.posit.co website traffic as
+    its only remaining signal.
   shiny.posit.co: >-
     The Shiny website, serving both the R and Python frameworks. It is
     tracked under both shiny-r and shiny-python with duplicated values;
@@ -533,6 +705,8 @@ glossary:
     trend, not user counts, and are not directly comparable across
     registries. PyPI counts here exclude known mirrors.
   stars: >-
-    Star counts are derived from star events and approximate the live
-    GitHub number (unstars and collection quirks put them within ~10%,
-    usually much closer).
+    There is no star data. Every star event was dropped from the upstream
+    devrel-io data in the 2026-07-28 refetch and collection has not resumed,
+    so there are no star events and no daily_stars metric. Star questions —
+    leaderboards, growth, totals — cannot be answered from this snapshot;
+    say that plainly instead of substituting forks or another metric.

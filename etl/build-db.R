@@ -44,8 +44,8 @@ build_devrel_db <- function(
   # unions over `events`, and `metrics_filled`/`indicators` build on
   # `metrics`. `__velocirepo_metric_watermarks` is left as a view; it's tiny
   # and only consulted while materializing `metrics_filled`. The staged
-  # copies keep velocirepo's shape (downstream views need the tags grain);
-  # only what lands in `out` applies the tags extraction, which also keeps
+  # copies keep velocirepo's shape (downstream views need the extra grain);
+  # only what lands in `out` applies the extra extraction, which also keeps
   # the artifact compact (transforming `out` tables in place would leave
   # the originals' blocks in the file).
   for (name in c("events", "metrics", "content", "metrics_filled", "indicators")) {
@@ -125,15 +125,15 @@ rewrite_data_paths <- function(sql, data_dir, call = rlang::caller_env()) {
   gsub(prefixes, data_dir, sql, fixed = TRUE)
 }
 
-# The SELECT that lands a staged table in the output. The JSON tags blobs
-# carry one key per source (Plausible `page`, YouTube `video_id`, GitHub
-# `user`); extract them as plain columns and drop the blobs, so queries
-# need neither DuckDB's json extension (JSON-typed columns can't be read at
-# all without it) nor the ->> idiom, which data-dict's expression grammar
-# lacks. `username`, not `user`, to stay clear of the SQL keyword.
-# content's remaining JSON columns become plain text (its `tags` is a
-# keyword list; `metadata` is empty today but kept in case velocirepo
-# starts populating it).
+# The SELECT that lands a staged table in the output. The JSON `extra` blobs
+# carry a handful of keys per source (Plausible `page`, YouTube `video_id`,
+# GitHub reactions' `ref`, issue/PR `author` and `state`); extract those as
+# plain columns, so queries need neither DuckDB's json extension (JSON-typed
+# columns can't be read at all without it) nor the ->> idiom, which
+# data-dict's expression grammar lacks. `username`, not `user`, to stay clear
+# of the SQL keyword. Whatever is left in `extra` (heterogeneous per content
+# type: repo language, RSS event location, ...) becomes plain text, as does
+# content's `tags` keyword list.
 materialize_select <- function(name) {
   staged <- sprintf("staged_%s", name)
   switch(
@@ -141,20 +141,23 @@ materialize_select <- function(name) {
     metrics = ,
     metrics_filled = ,
     indicators = sprintf(
-      "SELECT * EXCLUDE (tags),
-              tags->>'page' AS page,
-              tags->>'video_id' AS video_id
+      "SELECT * EXCLUDE (extra),
+              extra->>'page' AS page,
+              extra->>'video_id' AS video_id,
+              CAST(extra->>'ref' AS INTEGER) AS ref
        FROM %s",
       staged
     ),
     events = sprintf(
-      "SELECT * EXCLUDE (tags), tags->>'user' AS username FROM %s",
+      "SELECT * EXCLUDE (extra, \"user\"), \"user\" AS username FROM %s",
       staged
     ),
     content = sprintf(
-      "SELECT * EXCLUDE (tags, metadata),
+      "SELECT * EXCLUDE (tags, extra),
               CAST(tags AS VARCHAR) AS tags,
-              CAST(metadata AS VARCHAR) AS metadata
+              extra->>'author' AS author,
+              extra->>'state' AS state,
+              CAST(extra AS VARCHAR) AS extra
        FROM %s",
       staged
     ),

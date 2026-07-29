@@ -62,10 +62,12 @@ compute_targets <- function(con) {
        AND (metric = 'daily_site_visitors' OR (metric = 'daily_visitors' AND page IS NULL))"
   )
 
-  stars_ytd <- q(sprintf(
-    "SELECT project, SUM(value) AS stars FROM metrics
-     WHERE metric = 'daily_stars' AND date >= '2026-01-01' AND %s
-     GROUP BY project ORDER BY stars DESC LIMIT 5",
+  # Stars are gone from the data (2026-07-28 upstream refetch), so q04 grades
+  # a decline; forks are the nearest labeled proxy a good answer might offer.
+  forks_ytd <- q(sprintf(
+    "SELECT project, SUM(value) AS forks FROM metrics
+     WHERE metric = 'daily_forks' AND date >= '2026-01-01' AND %s
+     GROUP BY project ORDER BY forks DESC LIMIT 5",
     dedup_where
   ))
 
@@ -96,13 +98,16 @@ compute_targets <- function(con) {
 
   # The duplicate id's page rows start at the 2026-06-23 seam, so a naive
   # two-id sum doubles a recent window but inflates the full window only
-  # ~1.16x; the grading notes need both signatures to catch the double-count.
-  pages_naive_full <- q(
-    "SELECT page, SUM(value) AS pageviews FROM metrics
-     WHERE target = 'shiny.posit.co'
-       AND metric = 'daily_pageviews' AND page IS NOT NULL
-     GROUP BY page ORDER BY pageviews DESC LIMIT 5"
-  )
+  # ~1.18x; the grading notes need both signatures to catch the double-count.
+  pages_naive <- function(from) {
+    q(sprintf(
+      "SELECT page, SUM(value) AS pageviews FROM metrics
+       WHERE target = 'shiny.posit.co'
+         AND metric = 'daily_pageviews' AND page IS NOT NULL AND date >= '%s'
+       GROUP BY page ORDER BY pageviews DESC LIMIT 5",
+      from
+    ))
+  }
 
   # A genuine one-day spike sits two days after the collection seam; the
   # grading notes name it so graders don't mistake reports of it for an
@@ -150,14 +155,16 @@ compute_targets <- function(con) {
        FROM metrics
        WHERE project = 'orbital-python' AND source = 'pypi' AND metric = 'daily_downloads'"
     ),
-    stars_dedup = q1(sprintf(
+    github_dedup = q1(sprintf(
       "SELECT SUM(value) FROM metrics
-       WHERE metric = 'daily_stars' AND project LIKE 'orbital%%' AND %s",
+       WHERE source = 'github' AND metric LIKE 'daily_%%'
+         AND project LIKE 'orbital%%' AND %s",
       dedup_where
     )),
-    stars_naive = q1(
+    github_naive = q1(
       "SELECT SUM(value) FROM metrics
-       WHERE metric = 'daily_stars' AND project IN ('orbital', 'orbital-r', 'orbital-python')"
+       WHERE source = 'github' AND metric LIKE 'daily_%'
+         AND project IN ('orbital', 'orbital-r', 'orbital-python')"
     )
   )
 
@@ -168,12 +175,12 @@ compute_targets <- function(con) {
             (project = 'shiny-python' AND source = 'pypi'))
      GROUP BY project"
   )
-  shiny_stars_yearly <- q(
+  shiny_activity_yearly <- q(
     "SELECT EXTRACT(year FROM date) AS year,
             SUM(value) FILTER (WHERE project = 'shiny-r' AND target = 'rstudio/shiny') AS shiny_r,
-            SUM(value) FILTER (WHERE project = 'shiny-python') AS shiny_python
+            SUM(value) FILTER (WHERE project = 'shiny-python' AND target = 'posit-dev/py-shiny') AS shiny_python
      FROM metrics
-     WHERE metric = 'daily_stars' AND date >= '2023-01-01'
+     WHERE source = 'github' AND metric LIKE 'daily_%' AND date >= '2023-01-01'
      GROUP BY 1 ORDER BY 1"
   )
 
@@ -187,9 +194,11 @@ compute_targets <- function(con) {
     "SELECT SUM(value) FROM metrics
      WHERE project = 'ellmer' AND source = 'cran' AND metric = 'daily_downloads'"
   )
-  ggsql_stars <- q1(
-    "SELECT SUM(value) FROM metrics
-     WHERE project = 'ggsql' AND metric = 'daily_stars' AND date >= '2026-01-01'"
+  ggsql_activity <- q(
+    "SELECT metric, SUM(value) AS n FROM metrics
+     WHERE project = 'ggsql' AND source = 'github' AND metric LIKE 'daily_%'
+       AND date >= '2026-01-01'
+     GROUP BY 1 ORDER BY n DESC"
   )
 
   joint_pr <- q(
@@ -212,17 +221,11 @@ compute_targets <- function(con) {
   contributors <- q(sprintf(
     "SELECT username, COUNT(*) AS n FROM events
      WHERE project IN ('shiny', 'shiny-r', 'shiny-python', 'py-shiny')
-       AND type NOT IN ('star', 'fork') AND %s
+       AND type <> 'fork' AND %s
      GROUP BY username ORDER BY n DESC LIMIT 6",
     dedup_where
   ))
 
-  positron_star_dates <- q(
-    "SELECT date FROM metrics
-     WHERE project = 'positron' AND metric = 'daily_stars' ORDER BY date"
-  )$date
-  gaps <- diff(positron_star_dates)
-  gap_i <- which.max(gaps)
   positron_visitors <- function(from, to) {
     q1(sprintf(
       "SELECT SUM(value) FROM metrics
@@ -294,7 +297,30 @@ compute_targets <- function(con) {
      WHERE target LIKE 'tidyverse/%' ORDER BY target"
   )
 
-  workflows_target <- q1("SELECT DISTINCT target FROM metrics WHERE project = 'workflows' AND source = 'github'")
+  # events.ref makes per-issue timelines computable, so q24's response-time
+  # question now has a real answer: time from an issue opening to the first
+  # comment on that same issue.
+  response_time <- q(
+    "WITH opened AS (
+       SELECT project, target, ref, MIN(datetime) AS opened FROM events
+       WHERE type = 'issue_open' AND target LIKE 'tidyverse/%'
+         AND datetime >= '2025-07-01'
+       GROUP BY 1, 2, 3),
+     first_comment AS (
+       SELECT project, target, ref, MIN(datetime) AS commented FROM events
+       WHERE type = 'comment' AND target LIKE 'tidyverse/%'
+       GROUP BY 1, 2, 3)
+     SELECT COUNT(*) AS issues,
+            COUNT(c.commented) AS answered,
+            ROUND(MEDIAN(date_diff('hour', o.opened, c.commented)), 1) AS median_hours,
+            ROUND(QUANTILE_CONT(date_diff('hour', o.opened, c.commented), 0.75), 1) AS p75_hours
+     FROM opened o
+     LEFT JOIN first_comment c
+       ON c.project = o.project AND c.target = o.target AND c.ref = o.ref
+       AND c.commented >= o.opened"
+  )
+
+  workflows_target <- q1("SELECT DISTINCT target FROM content WHERE project = 'workflows'")
 
   list(
     snapshot_date = snapshot_date,
@@ -304,13 +330,14 @@ compute_targets <- function(con) {
     q02_yearly = fmt_rows(yearly, "year", "downloads"),
     q03_ytd_visitor_days = fmt(site_visitors_ytd),
     q03_double_count = fmt(site_visitors_double),
-    q04_leaderboard = fmt_rows(stars_ytd, "project", "stars"),
+    q04_forks_ytd = fmt_rows(forks_ytd, "project", "forks"),
     q05_channel_views = fmt(channel$value),
     q05_channel_asof = as.character(channel$date),
     q05_per_video_sum = fmt(per_video$views),
-    q06_pages_last31 = fmt_rows(pages("2026-06-23"), "page", "pageviews"),
+    q06_pages_recent = fmt_rows(pages("2026-06-23"), "page", "pageviews"),
     q06_pages_full = fmt_rows(pages("2026-03-02"), "page", "pageviews"),
-    q06_pages_naive_full = fmt_rows(pages_naive_full, "page", "pageviews"),
+    q06_pages_naive_full = fmt_rows(pages_naive("2026-03-02"), "page", "pageviews"),
+    q06_pages_naive_recent = fmt_rows(pages_naive("2026-06-23"), "page", "pageviews"),
     q07_top_video = sprintf("\"%s\" with %s views", videos$title[1], fmt(videos$views[1])),
     q07_runner_up = sprintf("\"%s\" with %s views", videos$title[2], fmt(videos$views[2])),
     q08_cran_june = fmt(downloads_june("cran")),
@@ -323,9 +350,9 @@ compute_targets <- function(con) {
       "PyPI (orbital-python): series starts %s (collection began 2025-06), %s total, %s in 2026 YTD",
       orbital$pypi$start, fmt(orbital$pypi$total), fmt(orbital$pypi$ytd)
     ),
-    q09_stars = sprintf(
-      "github stars all-time: %s deduplicated vs %s summed naively across the three orbital ids",
-      fmt(orbital$stars_dedup), fmt(orbital$stars_naive)
+    q09_github = sprintf(
+      "github activity events all-time (issues, PRs, comments, forks): %s deduplicated vs %s summed naively across the three orbital ids",
+      fmt(orbital$github_dedup), fmt(orbital$github_naive)
     ),
     q10_june25_pageviews = fmt(june25_pageviews),
     q11_downloads_matched = sprintf(
@@ -333,18 +360,18 @@ compute_targets <- function(con) {
       fmt(shiny_matched$downloads[shiny_matched$project == "shiny-r"]),
       fmt(shiny_matched$downloads[shiny_matched$project == "shiny-python"])
     ),
-    q11_stars_yearly = paste(
+    q11_activity_yearly = paste(
       sprintf(
         "%d: rstudio/shiny %s vs py-shiny %s",
-        shiny_stars_yearly$year,
-        vapply(shiny_stars_yearly$shiny_r, fmt, character(1)),
-        vapply(shiny_stars_yearly$shiny_python, fmt, character(1))
+        shiny_activity_yearly$year,
+        vapply(shiny_activity_yearly$shiny_r, fmt, character(1)),
+        vapply(shiny_activity_yearly$shiny_python, fmt, character(1))
       ),
       collapse = "; "
     ),
     q12_hadley_events = fmt_rows(hadley_candidates, "project", "n"),
     q12_ellmer_cran = fmt(ellmer_cran),
-    q12_ggsql_stars = fmt(ggsql_stars),
+    q12_ggsql_activity = fmt_rows(ggsql_activity, "metric", "n"),
     q13_joint_pr = paste(
       sprintf(
         "%s (hadley %s / joe %s)",
@@ -357,10 +384,6 @@ compute_targets <- function(con) {
     q14_dplyr_june = fmt(dplyr_month("2026-06-01", "2026-06-30")),
     q14_docs_visitors_june = fmt(dplyr_docs),
     q15_contributors = fmt_rows(contributors, "username", "n"),
-    q16_star_gap = sprintf(
-      "positron daily_stars has no rows between %s and %s",
-      positron_star_dates[gap_i], positron_star_dates[gap_i + 1]
-    ),
     q16_visitors_first = fmt(positron_visitors("2024-12-01", "2024-12-31")),
     q16_visitors_last = fmt(positron_visitors("2026-06-01", "2026-06-30")),
     q17_latest_cran = sprintf(
@@ -391,6 +414,11 @@ compute_targets <- function(con) {
     q24_tidyverse_repos = sprintf(
       "%d tidyverse-org repos are tracked: %s",
       nrow(tidyverse_repos), paste(tidyverse_repos$target, collapse = ", ")
+    ),
+    q24_response_time = sprintf(
+      "issues opened in tidyverse repos since 2025-07-01: %s issues, %s got a comment, median %s hours to first comment (p75 %s hours)",
+      fmt(response_time$issues), fmt(response_time$answered),
+      response_time$median_hours, response_time$p75_hours
     ),
     q26_workflows_target = workflows_target
   )

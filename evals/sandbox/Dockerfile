@@ -29,7 +29,8 @@ COPY <<'EOF' CLAUDE.md
 
 This repository is Posit's developer relations metrics collection: daily
 adoption and engagement data for Posit's open source projects, gathered by
-velocirepo from GitHub, PyPI, CRAN, Plausible, OpenVSX, and YouTube.
+velocirepo from GitHub, PyPI, CRAN, Plausible, OpenVSX, YouTube, and the
+opensource.posit.co RSS feeds.
 
 Your job here is to answer questions about that data. This repository is the
 only source available to you -- there is no network access, and you should not

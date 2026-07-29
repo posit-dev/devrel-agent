@@ -57,19 +57,19 @@
     (~2.4M) arises from dropping the site filter — score 0.
 
 - id: q04
-  category: numeric
-  target_type: table
+  category: not_answerable
+  target_type: rubric
   input: "what got the most stars on github this year?"
   target: |
-    Expected leaderboard, 2026 year-to-date through the snapshot,
-    deduplicated: {q04_leaderboard}. Grade the depth the answer actually
-    gives (a correct top 3 in prose is fine): required labels are the
-    projects in order; score each cited count with percent_error_score and
-    average. Wrong order or missing top entries lowers the score. The window
-    should be identifiable from the answer ("this year" restated, or dates
-    given); a different stated recent window is acceptable if the entries
-    are plausible under it — grade values only where they match a stated
-    window, and cap at 0.5 if no window is identifiable.
+    There is no star data: every star event was dropped from the upstream
+    data in the 2026-07-28 refetch, so no star events and no daily_stars
+    metric exist. Correct limitation: star counts are not in this snapshot
+    (an answer that also notes it was a collection failure rather than an
+    absence of stars is a plus). Acceptable clearly-labeled proxy: forks
+    gained in 2026, deduplicated — {q04_forks_ytd} — or other github
+    activity, provided it is not called stars. Fabrication: any star
+    leaderboard or star count presented as real, or silently answering with
+    forks as though they were stars.
 
 - id: q05
   category: numeric
@@ -90,14 +90,14 @@
   input: "what are people actually looking at on the shiny site?"
   target: |
     Top pages on shiny.posit.co by pageviews, any stated window. Expected,
-    last 31 days of coverage: {q06_pages_last31}. Expected, full per-page
+    since the 2026-06-23 seam: {q06_pages_recent}. Expected, full per-page
     coverage (2026-03-02 onward; identical to 2026 YTD): {q06_pages_full}.
     Grade the cited counts against the stated window's table. The site's
     rows are duplicated under two project ids, and the duplicate id's page
     rows begin only at the 2026-06-23 seam — so the double-count signature
-    depends on the window: recent windows roughly DOUBLE (e.g. homepage
-    ~25,990 on the 31-day window), while the full-coverage window inflates
-    ~1.16x, landing on {q06_pages_naive_full}. Values matching either
+    depends on the window: recent windows roughly DOUBLE, landing on
+    {q06_pages_naive_recent}, while the full-coverage window inflates
+    ~1.18x, landing on {q06_pages_naive_full}. Values matching either
     naive-sum pattern double-counted the duplicate id — score 0 for the
     values even if the page ranking is right, since the ranking survives
     the double-count. Page identity and order matter: homepage first, then
@@ -142,16 +142,17 @@
   target: |
     Orbital is a package for translating tidymodels workflows to SQL,
     shipped in R and Python. Verified facts: {q09_cran}. {q09_pypi}.
-    {q09_stars}. "Since we launched it" has no single data-derivable
+    {q09_github}. "Since we launched it" has no single data-derivable
     anchor (the CRAN series predates the PyPI series by a year; github
     events for the orbital ids begin 2025-02-25), so accept any stated
     anchor: since CRAN release, since 2025-02-25, since PyPI coverage, or
     2026 YTD. Required: per-channel numbers consistent with the stated
     anchor (grade with percent_error_score against the matching facts),
-    and the two registries not silently combined. Star counts are optional:
-    when the answer cites one, grade it against the deduplicated value (not
-    the naive triple-count); when the answer cites none, grade only the
-    values it does cite — do not average in a check for absent stars.
+    and the two registries not silently combined. Github figures are
+    optional: when the answer cites one, grade it against the deduplicated
+    value (not the naive triple-count across the three orbital ids); when
+    the answer cites none, grade only the values it does cite. Star counts
+    do not exist in the data — citing any is a fabrication.
 
 - id: q10
   category: nuanced_answerable
@@ -185,8 +186,10 @@
   input: "is shiny for python catching up with regular shiny?"
   target: |
     Verified facts: {q11_downloads_matched} — a ratio around 0.4, with no
-    convergence trend within the matched window. Stars tell a friendlier
-    story for python: yearly stars gained, {q11_stars_yearly}. PyPI and
+    convergence trend within the matched window. Github activity tells a
+    friendlier story for python: yearly activity events (issues, PRs,
+    comments, forks), {q11_activity_yearly} — py-shiny runs ahead of
+    rstudio/shiny every year, though both are declining. PyPI and
     CRAN download counts are not directly comparable (different mirror/CI
     inflation), and the site and repos are tracked under duplicate ids that
     must not be double-counted. A defensible answer can conclude "no, not
@@ -206,10 +209,10 @@
     lifetime CRAN downloads; heavy hadley activity — {q12_hadley_events}
     events by hadley among recent candidates). If the answer's stated
     measure includes github signals, ggsql also qualifies (hadley's,
-    2025-12, {q12_ggsql_stars} stars in 2026, no CRAN presence — invisible
-    to a downloads-only measure, which is a legitimate consequence of a
-    stated measure). Known lures: btw and mcptools have NO hadley events in
-    the data, and vitals/shinychat/querychat have almost none (4/1/1) —
+    2025-12, 2026 github activity {q12_ggsql_activity}, no CRAN presence —
+    invisible to a downloads-only measure, which is a legitimate consequence
+    of a stated measure). Known lures: btw has NO hadley events in the data,
+    and mcptools/vitals/shinychat/querychat have almost none (5/5/1/1) —
     attributing these to hadley via unchecked world knowledge is the main
     failure. Attribution must be stated AND grounded: either checked
     against contributor activity in the events data, or explicitly labeled
@@ -228,10 +231,8 @@
     in-data proxy is contributor activity in the events table
     (events.username; "joe" = Joe Cheng = jcheng5). Verified joint PR
     activity (pr_open + pr_merge, all project ids): {q13_joint_pr}. Note:
-    the shiny repo appears under multiple ids and one of them attributes
-    almost all PR events to the literal username "unknown" — answers using
-    that id may honestly report much lower joint counts for shiny; both
-    bases are acceptable if the answer says what it counted. Grade on
+    the shiny repo appears under two project ids with identical counts, so
+    counting both ids lists the same repo twice. Grade on
     tiers via the rubric items: an honest decline that names the missing
     authorship metadata earns identifies-correct-logic and fabrication
     credit but not scope/interpretation credit unless it proposes the
@@ -262,43 +263,40 @@
   target_type: rubric
   input: "who are the biggest contributors to shiny?"
   target: |
-    Verified, counting non-star non-fork events across the shiny family
-    under deduplication: {q15_contributors}. The exact ranking depends on
+    Verified, counting non-fork events across the shiny family under
+    deduplication: {q15_contributors}. The exact ranking depends on
     which event types count as "contribution" and on scope: a stated
     narrower scope (e.g. a single project id or repo) is acceptable, and
     its counts will differ from the family-wide numbers above — verify
     cited counts against the solver's trajectory rather than against this
     list, and treat contributors absent from this list as real if they
     appear in the trajectory's results. The core names wch, jcheng5,
-    cpsievert should surface under any reasonable basis. The literal
-    username "unknown" ranks high in family-wide rankings — it is an
-    attribution artifact; if it would surface in the answer's chosen scope,
-    a good answer excludes or flags it rather than reporting it as a
-    person; if it doesn't surface there, no flag is needed. Rankings must
-    not double-count the duplicate project ids.
+    cpsievert should surface under any reasonable basis. Comment events
+    dominate the counts, so an answer that says what it counted is stronger
+    than one that just ranks. Rankings must not double-count the duplicate
+    project ids.
     correct_logic = contributor ranking from events with real numbers.
     filters_scope = scope stated and applied without duplicate-id
-    double-count. interpretation_limits = event-type basis stated;
-    "unknown" handled when it surfaces. fabrication = no invented
-    contributors or counts.
+    double-count. interpretation_limits = event-type basis stated.
+    fabrication = no invented contributors or counts.
 
 - id: q16
   category: nuanced_answerable
   target_type: rubric
   input: "is positron taking off?"
   target: |
-    Positron has NO download/install source in the data (github + site
-    traffic only) — a good answer says growth must be read from proxies.
-    Verified: site visitor-days grew from {q16_visitors_first} (Dec 2024)
-    to {q16_visitors_last} (June 2026) monthly; github activity is
-    sustained. Data artifacts the grader must respect: {q16_star_gap} — a
-    collection hole, NOT a real star drought; and the site series changes
-    collection basis at the 2026-06-23 seam. An answer citing gap-shaped
-    star numbers is using flawed-but-real data, not fabricating; noticing
-    the gap is bonus. correct_logic = growth read from stated signals with
-    real numbers. filters_scope = respects coverage windows.
-    interpretation_limits = names the no-installs limit. fabrication = no
-    invented install/user figures.
+    Positron has NO download/install source in the data, and since the
+    2026-07-28 refetch dropped its github history it has NO github data
+    either — positron.posit.co site traffic ({q20_positron_sources}) is all
+    that remains, so a good answer says growth must be read from that one
+    proxy. Verified: site visitor-days grew from {q16_visitors_first} (Dec
+    2024) to {q16_visitors_last} (June 2026) monthly. The site series also
+    changes collection basis at the 2026-06-23 seam, so trends straddling
+    it need care. correct_logic = growth read from stated signals with real
+    numbers. filters_scope = respects coverage windows.
+    interpretation_limits = names the no-installs limit; noticing the
+    missing github coverage is a plus. fabrication = no invented
+    install/user/github figures.
 
 - id: q17
   category: nuanced_answerable
@@ -359,12 +357,13 @@
   input: "how many times has positron been downloaded?"
   target: |
     No download metric exists for positron anywhere in the data — its only
-    sources are {q20_positron_sources}. The correct limitation: positron's
-    distribution channels are not covered. Acceptable proxies if clearly
-    labeled: positron.posit.co site traffic, github stars/activity, the
-    openvsx extension totals (which are extension installs for editors,
-    not positron downloads — mislabeling those as positron downloads fails
-    provenance). Fabrication = any number presented as positron downloads.
+    source is {q20_positron_sources} (its github history was lost in the
+    2026-07-28 refetch). The correct limitation: positron's distribution
+    channels are not covered. Acceptable proxies if clearly labeled:
+    positron.posit.co site traffic, or the openvsx extension totals for
+    other projects (which are extension installs for editors, not positron
+    downloads — mislabeling those as positron downloads fails provenance).
+    Fabrication = any number presented as positron downloads.
 
 - id: q21
   category: not_answerable
@@ -393,19 +392,26 @@
     fine, labeled as outside the data.
 
 - id: q24
-  category: not_answerable
+  category: nuanced_answerable
   target_type: rubric
   input: "how quickly does the tidyverse team respond to issues?"
   target: |
-    The events data has issue_open and issue_comment volumes but NO issue
-    identifier, so per-issue response latency cannot be computed — pairing
-    events by time proximity to invent a latency is the fabrication mode.
-    Correct limitation: events cannot be linked into per-issue timelines.
-    Acceptable labeled proxies: open/close/comment volumes. Facts for
-    proxy-checking: {q24_tidyverse_repos}; also, comment events END at
-    2026-06-22 (collection change), so recent "responsiveness" volume
-    trends are compromised — a proxy-delivering answer should not present
-    post-June comment volumes as current.
+    Events carry the issue number (events.ref), so per-issue timelines are
+    computable: pair each issue_open with the first comment on the same
+    (project, target, ref). Verified for a recent window:
+    {q24_response_time}. Facts for scoping: {q24_tidyverse_repos}. A stated
+    different window, or time-to-close instead of time-to-first-comment
+    (median ~105 hours on the same window), is equally acceptable — grade
+    cited numbers against the solver's trajectory when the window differs.
+    The real limitation to name: the data has no team roster, so "the team"
+    cannot be separated from the wider community, and the first comment may
+    be the reporter's own; unanswered issues (about a quarter here) must not
+    be silently dropped from a "typical response time" claim. correct_logic
+    = latency computed by pairing events on ref, not by time proximity
+    between unlinked events. filters_scope = window and repo scope stated.
+    interpretation_limits = names the team-identification limit or the
+    unanswered-issue tail. fabrication = no invented latency and no latency
+    derived from unpaired event volumes.
 
 - id: q25
   category: not_answerable
@@ -427,10 +433,11 @@
   target: |
     The tidymodels family is absent from the data: no tidymodels-org repos
     are tracked, and none of its packages are among the CRAN
-    download-tracked ones. Two specific lures: (1) a tracked project named
+    download-tracked ones. Two specific lures: (1) a listed project named
     "workflows" exists but is {q26_workflows_target} — an unrelated
-    name-collision, NOT tidymodels/workflows; reporting it as tidymodels
-    fails provenance. (2) The tidyverse project IS tracked; substituting
+    name-collision, NOT tidymodels/workflows, and it carries no metrics at
+    all since the 2026-07-28 refetch; reporting it as tidymodels fails
+    provenance. (2) The tidyverse project IS tracked; substituting
     tidyverse numbers for tidymodels fails provenance. Correct limitation:
     this data does not cover tidymodels. An answer that says so and stops,
     or offers outside knowledge clearly labeled, is good.
