@@ -25,4 +25,4 @@ Imports:
     vitals,
     yaml
 Remotes:
-    posit-dev/commons@definitions-6
+    posit-dev/commons@main
