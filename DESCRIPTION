@@ -25,4 +25,5 @@ Imports:
     vitals,
     yaml
 Remotes:
-    posit-dev/commons@main
+    posit-dev/commons@main,
+    tidyverse/vitals#218
