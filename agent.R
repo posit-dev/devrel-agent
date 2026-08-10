@@ -11,7 +11,10 @@ devrel_con <- DBI::dbConnect(
 )
 
 devrel_agent <- commons(
-  client = ellmer::chat_anthropic(model = "claude-sonnet-5"),
+  client = ellmer::chat_anthropic(
+    model = "claude-sonnet-5",
+    params = ellmer::params(reasoning_effort = "high")
+  ),
   data_sources = list(
     devrel = data_source(
       devrel_con,

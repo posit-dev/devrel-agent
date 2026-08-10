@@ -38,7 +38,7 @@ make_devrel_solver <- function(con, client_factory = make_solver_client) {
 # crawled site prose. Closed-book -- the repo is the only permitted source --
 # so the arms differ in the semantic layer, not in the data they can reach.
 make_claude_code_solver <- function(
-  solver_chat = function() ellmer::chat_anthropic(model = "claude-sonnet-5"),
+  solver_chat = make_solver_client,
   compose = "evals/sandbox/compose.yaml",
   time_limit = 1200,
   max_samples = 4

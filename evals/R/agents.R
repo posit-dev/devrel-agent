@@ -31,7 +31,10 @@ build_devrel_agent <- function(con, client_factory = make_solver_client) {
 }
 
 make_solver_client <- function() {
-  ellmer::chat_anthropic(model = "claude-sonnet-5")
+  ellmer::chat_anthropic(
+    model = "claude-sonnet-5",
+    params = ellmer::params(reasoning_effort = "high")
+  )
 }
 
 # Thinking is disabled for grading (as in bluffbench2's scorer): the
