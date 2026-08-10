@@ -257,16 +257,27 @@ tables:
         type: date
         description: The row's calendar month, for monthly rollups.
         expr: CAST(date_trunc('month', date) AS DATE)
-      - name: downloads
+      - name: cran_downloads
         type: number(quantity)
         description: >-
-          Package downloads (CRAN + PyPI daily_downloads), deduplicated.
-          Group by source unless the question names one registry; CRAN and
-          PyPI have different counting semantics and should not be silently
-          combined. Includes automated traffic (mirrors, CI, caching);
-          indicates scale and trend, not user counts. The CRAN series is
-          missing ~13 scattered days, so range sums slightly undercount.
-        expr: SUM(value) FILTER (WHERE metric = 'daily_downloads' AND deduplicated)
+          CRAN package downloads, deduplicated. Includes automated traffic
+          (mirrors, CI, caching); indicates scale and trend, not user counts.
+          The series is missing ~13 scattered days, so range sums slightly
+          undercount. Do not combine with pypi_downloads: the registries have
+          different counting semantics.
+        expr: >-
+          SUM(value) FILTER (WHERE source = 'cran'
+            AND metric = 'daily_downloads' AND deduplicated)
+      - name: pypi_downloads
+        type: number(quantity)
+        description: >-
+          PyPI package downloads, deduplicated and excluding known mirrors.
+          Includes automated traffic (CI and caching); indicates scale and
+          trend, not user counts. Do not combine with cran_downloads: the
+          registries have different counting semantics.
+        expr: >-
+          SUM(value) FILTER (WHERE source = 'pypi'
+            AND metric = 'daily_downloads' AND deduplicated)
       - name: pageviews
         type: number(quantity)
         description: >-
