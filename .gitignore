@@ -2,4 +2,4 @@ plans/
 context/
 data/
 .env
-evals/logs/
+evals/logs-backup/
