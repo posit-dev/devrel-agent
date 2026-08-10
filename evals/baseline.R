@@ -8,7 +8,8 @@
 source("evals/run.R")
 
 results <- run_eval(
-  name = "devrel-commons-sonnet5-medium"
+  name = "devrel-commons-sonnet5-medium",
+  epochs = 2
 )
 
 cols <- c("id", "category", "score", "latency_sec", "input_tokens", "output_tokens")
