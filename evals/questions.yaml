@@ -2,7 +2,7 @@
 # each target block tells the grader the accepted interpretations, the expected
 # values or facts under each, and any score adjustments. {placeholders} are
 # interpolated from evals/targets.yaml (authored/audited by evals/targets.R
-# against the same snapshot the solver queries).
+# against the same snapshot the solver queries) and runtime evaluation facts.
 #
 # categories: numeric (percent-error tools; target_type numeric or table) |
 # nuanced_answerable, not_answerable (binary rubric via submit_grade).
@@ -303,16 +303,17 @@
   target_type: rubric
   input: "how many cran downloads did we get yesterday?"
   target: |
-    The agent has no clock, and CRAN data lags the snapshot: {q17_latest_cran}
-    (the snapshot's other sources reach one day later). The ideal answer
-    reports the most recent available day, DATED, and notes that CRAN
-    reporting lags so "yesterday" may not be loaded yet; scope (the ~13
-    tracked CRAN packages, deduplication) stated or implied correctly.
-    correct_logic = latest-day total consistent with the verified value.
-    filters_scope = across tracked packages, deduplicated (or a stated
-    narrower scope). interpretation_limits = the date is explicit and the
-    lag acknowledged. fabrication = does not present the latest row as
-    literally yesterday's calendar total without the caveat.
+    For this evaluation, the solver is told today is {eval_current_date}, so
+    "yesterday" means {eval_yesterday}. {q17_coverage} Use the solver
+    trajectory to check which date it queried; the answer does not need to
+    repeat the date explicitly. Providing the latest available dated total
+    when yesterday is unavailable is optional, not required.
+    correct_logic = checks and accurately reports CRAN availability and, when
+    available, the total for {eval_yesterday}. filters_scope = checks CRAN
+    across the tracked packages and deduplicates if calculating a total.
+    interpretation_limits = does not silently substitute a different date;
+    any alternative date or value is clearly labeled. fabrication = no
+    unsupported count or explanation for missing coverage.
 
 - id: q18
   category: nuanced_answerable

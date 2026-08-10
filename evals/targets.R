@@ -386,10 +386,8 @@ compute_targets <- function(con) {
     q15_contributors = fmt_rows(contributors, "username", "n"),
     q16_visitors_first = fmt(positron_visitors("2024-12-01", "2024-12-31")),
     q16_visitors_last = fmt(positron_visitors("2026-06-01", "2026-06-30")),
-    q17_latest_cran = sprintf(
-      "latest CRAN day in the data: %s, %s downloads across tracked packages",
-      latest_cran$date, fmt(latest_cran$downloads)
-    ),
+    q17_latest_cran_date = as.character(latest_cran$date),
+    q17_latest_cran_downloads = fmt(latest_cran$downloads),
     q18_pairs_ytd = paste(pairs_ytd, collapse = "; "),
     q18_shiny_matched = sprintf(
       "shiny (CRAN) %s vs shiny for python (PyPI) %s since 2025-06-04",

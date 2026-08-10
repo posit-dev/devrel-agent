@@ -55,8 +55,8 @@ q15_contributors: 'wch: 3,909; jcheng5: 2,687; cpsievert: 2,109; schloerke: 1,76
   gadenbuie: 950; yihui: 686'
 q16_visitors_first: '11,265'
 q16_visitors_last: '41,294'
-q17_latest_cran: 'latest CRAN day in the data: 2026-07-27, 230,111 downloads across
-  tracked packages'
+q17_latest_cran_date: '2026-07-27'
+q17_latest_cran_downloads: '230,111'
 q18_pairs_ytd: chatlas 371,070 PyPI vs ellmer 93,204 CRAN; great-tables 3,387,378
   PyPI vs gt 972,135 CRAN; pointblank-python 261,647 PyPI vs pointblank-r 33,999 CRAN;
   orbital-python 23,222 PyPI vs orbital-r 3,116 CRAN; querychat 24,322 PyPI vs querychat
