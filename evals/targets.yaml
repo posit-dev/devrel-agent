@@ -17,14 +17,10 @@ q04_forks_ytd: 'ggplot2: 47; cheatsheets: 46; skills: 35; shiny-r: 25; dplyr: 24
 q05_channel_views: '4,105,677'
 q05_channel_asof: '2026-07-28'
 q05_per_video_sum: '4,107,054'
-q06_pages_recent: '/: 14,696; /r/getstarted/shiny-basics/lesson1/: 12,807; /r/gallery/:
-  9,042; /py/: 5,530; /py/get-started/: 2,435'
-q06_pages_full: '/: 83,166; /r/getstarted/shiny-basics/lesson1/: 70,017; /r/gallery/:
-  49,882; /py/: 28,750; /py/get-started/: 14,175'
-q06_pages_naive_full: '/: 98,062; /r/getstarted/shiny-basics/lesson1/: 82,767; /r/gallery/:
-  58,503; /py/: 34,153; /py/get-started/: 16,508'
-q06_pages_naive_recent: '/: 29,592; /r/getstarted/shiny-basics/lesson1/: 25,557; /r/gallery/:
-  17,663; /py/: 10,933; /r/components/: 4,897'
+q06_pages_calendar_month: '/: 15,217; /r/getstarted/shiny-basics/lesson1/: 13,187;
+  /r/gallery/: 8,965; /py/: 4,822; /r/components/: 2,329'
+q06_pages_trailing_month: '/: 12,064; /r/getstarted/shiny-basics/lesson1/: 10,552;
+  /r/gallery/: 7,213; /py/: 4,436; /r/components/: 2,059'
 q07_top_video: '"Machine Learning with R and TensorFlow" with 99,647 views'
 q07_runner_up: '"Get started with Quarto | Mine Çetinkaya-Rundel" with 85,260 views'
 q08_cran_june: '6,910,111'

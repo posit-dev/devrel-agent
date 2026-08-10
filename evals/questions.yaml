@@ -87,22 +87,19 @@
 - id: q06
   category: numeric
   target_type: table
-  input: "what are people actually looking at on the shiny site?"
+  input: "what are people actually looking at on the shiny site? use the last full month of data"
   target: |
-    Top pages on shiny.posit.co by pageviews, any stated window. Expected,
-    since the 2026-06-23 seam: {q06_pages_recent}. Expected, full per-page
-    coverage (2026-03-02 onward; identical to 2026 YTD): {q06_pages_full}.
-    Grade the cited counts against the stated window's table. The site's
-    rows are duplicated under two project ids, and the duplicate id's page
-    rows begin only at the 2026-06-23 seam — so the double-count signature
-    depends on the window: recent windows roughly DOUBLE, landing on
-    {q06_pages_naive_recent}, while the full-coverage window inflates
-    ~1.18x, landing on {q06_pages_naive_full}. Values matching either
-    naive-sum pattern double-counted the duplicate id — score 0 for the
-    values even if the page ranking is right, since the ranking survives
-    the double-count. Page identity and order matter: homepage first, then
-    the get-started lesson, then the gallery. Noting the R vs Python
-    section split is a plus, not required.
+    Top pages on shiny.posit.co by pageviews. Accept either interpretation
+    of "last full month": the most recent complete calendar month, June
+    2026, expected {q06_pages_calendar_month}; or the trailing 30 days ending
+    on the latest available date, 2026-06-29 through 2026-07-28, expected
+    {q06_pages_trailing_month}. The answer must make its chosen window
+    identifiable; grade its counts against the matching table. The site's
+    page rows are duplicated under two project ids from the 2026-06-23 seam,
+    so sums across both ids are wrong. Score the values 0 if they reflect
+    that double-count, even when the ranking survives. Page identity and
+    order matter: homepage first, then the get-started lesson, then the
+    gallery. Noting the R vs Python section split is a plus, not required.
 
 - id: q07
   category: numeric

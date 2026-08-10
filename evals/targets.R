@@ -86,26 +86,14 @@ compute_targets <- function(con) {
      WHERE m.source = 'youtube' AND m.metric = 'total_views'"
   )
 
-  pages <- function(from) {
+  pages <- function(from, to) {
     q(sprintf(
       "SELECT page, SUM(value) AS pageviews FROM metrics
        WHERE project = 'shiny-python' AND target = 'shiny.posit.co'
-         AND metric = 'daily_pageviews' AND page IS NOT NULL AND date >= '%s'
+         AND metric = 'daily_pageviews' AND page IS NOT NULL
+         AND date BETWEEN '%s' AND '%s'
        GROUP BY page ORDER BY pageviews DESC LIMIT 5",
-      from
-    ))
-  }
-
-  # The duplicate id's page rows start at the 2026-06-23 seam, so a naive
-  # two-id sum doubles a recent window but inflates the full window only
-  # ~1.18x; the grading notes need both signatures to catch the double-count.
-  pages_naive <- function(from) {
-    q(sprintf(
-      "SELECT page, SUM(value) AS pageviews FROM metrics
-       WHERE target = 'shiny.posit.co'
-         AND metric = 'daily_pageviews' AND page IS NOT NULL AND date >= '%s'
-       GROUP BY page ORDER BY pageviews DESC LIMIT 5",
-      from
+      from, to
     ))
   }
 
@@ -334,10 +322,12 @@ compute_targets <- function(con) {
     q05_channel_views = fmt(channel$value),
     q05_channel_asof = as.character(channel$date),
     q05_per_video_sum = fmt(per_video$views),
-    q06_pages_recent = fmt_rows(pages("2026-06-23"), "page", "pageviews"),
-    q06_pages_full = fmt_rows(pages("2026-03-02"), "page", "pageviews"),
-    q06_pages_naive_full = fmt_rows(pages_naive("2026-03-02"), "page", "pageviews"),
-    q06_pages_naive_recent = fmt_rows(pages_naive("2026-06-23"), "page", "pageviews"),
+    q06_pages_calendar_month = fmt_rows(
+      pages("2026-06-01", "2026-06-30"), "page", "pageviews"
+    ),
+    q06_pages_trailing_month = fmt_rows(
+      pages("2026-06-29", "2026-07-28"), "page", "pageviews"
+    ),
     q07_top_video = sprintf("\"%s\" with %s views", videos$title[1], fmt(videos$views[1])),
     q07_runner_up = sprintf("\"%s\" with %s views", videos$title[2], fmt(videos$views[2])),
     q08_cran_june = fmt(downloads_june("cran")),
