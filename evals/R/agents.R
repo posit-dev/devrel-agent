@@ -2,32 +2,10 @@
 # sample gets a fresh agent (fresh conversation, handle store, and worker)
 # over a shared read-only connection.
 
+source("agent-builder.R")
+
 make_devrel_con <- function(db_path = "data/devrel.duckdb") {
   DBI::dbConnect(duckdb::duckdb(), db_path, read_only = TRUE)
-}
-
-# Mirrors agent.R, which is the deployed wiring; kept as a function so the
-# solver can rebuild per sample and future variants (e.g. a no-dictionary
-# arm) can branch here.
-build_devrel_agent <- function(con, client_factory = make_solver_client) {
-  commons::commons(
-    client = client_factory(),
-    data_sources = list(
-      devrel = commons::data_source(
-        con,
-        tables = c(
-          "projects",
-          "metrics",
-          "metrics_filled",
-          "indicators",
-          "events",
-          "content",
-          "meta"
-        ),
-        dictionary = "dictionaries/devrel.data-dict.yaml"
-      )
-    )
-  )
 }
 
 make_solver_client <- function() {

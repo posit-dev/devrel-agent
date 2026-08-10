@@ -58,6 +58,12 @@ tables:
       GitHub total_reactions per issue/PR since 2026-07-27, and RSS
       total_items for the five opensource.posit.co feeds since 2026-07-27.
 
+      YouTube total_* values are cumulative lifetime snapshots collected
+      after 2026-06-25. They cannot reconstruct views, likes, or comments
+      earned before collection began, or performance within an earlier
+      calendar period. Use metrics_filled for a coherent value on a given
+      date or the latest value.
+
       A 2026-07-28 refetch upstream damaged GitHub coverage in two ways that
       have not been repaired. Every star event was dropped, so there are no
       `daily_stars` rows at all; say so rather than substituting forks or
@@ -255,9 +261,11 @@ tables:
         type: number(quantity)
         description: >-
           Package downloads (CRAN + PyPI daily_downloads), deduplicated.
-          Includes automated traffic (mirrors, CI, caching); indicates
-          scale and trend, not user counts. The CRAN series is missing ~13
-          scattered days, so range sums slightly undercount.
+          Group by source unless the question names one registry; CRAN and
+          PyPI have different counting semantics and should not be silently
+          combined. Includes automated traffic (mirrors, CI, caching);
+          indicates scale and trend, not user counts. The CRAN series is
+          missing ~13 scattered days, so range sums slightly undercount.
         expr: SUM(value) FILTER (WHERE metric = 'daily_downloads' AND deduplicated)
       - name: pageviews
         type: number(quantity)
@@ -429,6 +437,10 @@ tables:
       — content.author is authorship. Some repos appear under two project
       ids with duplicated events (see metrics); apply the {{deduplicated}}
       filter when counting across projects.
+
+      Formal package authorship and maintainer roles are not collected.
+      Contributor events can be used only as a clearly labeled activity
+      proxy; they do not establish that someone authored a package.
     columns:
       - name: project
         type: string
@@ -484,6 +496,12 @@ tables:
       tidyverse, and quarto-dev orgs (68 have no metrics at all yet). Which
       sources cover a project is best read from the data, e.g.
       SELECT DISTINCT source FROM metrics WHERE project = 'ellmer'.
+
+      Language/topic tags are sparse and are not a portfolio census. Derive
+      broad rosters from observed sources and repository metadata rather than
+      treating tagged projects as the complete set. This table does not carry
+      source or target columns; derive those relationships from metrics,
+      events, or content.
     columns:
       - name: id
         type: string
@@ -710,7 +728,12 @@ glossary:
     CRAN and PyPI download counts include automated traffic (mirrors, CI,
     caching) and each registry counts differently; they indicate scale and
     trend, not user counts, and are not directly comparable across
-    registries. PyPI counts here exclude known mirrors.
+    registries. Group by source unless a question names one registry; do not
+    silently present a combined total. PyPI counts here exclude known mirrors.
+  package authorship: >-
+    Formal package authorship and maintainer roles are not collected.
+    GitHub event usernames describe public contribution activity, not package
+    authorship, and may be used only as a clearly labeled proxy.
   stars: >-
     There is no star data. Every star event was dropped from the upstream
     devrel-io data in the 2026-07-28 refetch and collection has not resumed,

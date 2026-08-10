@@ -4,40 +4,18 @@
 
 library(commons)
 
+source("agent-builder.R")
+
 devrel_con <- DBI::dbConnect(
   duckdb::duckdb(),
   "data/devrel.duckdb",
   read_only = TRUE
 )
 
-devrel_agent <- commons(
+devrel_agent <- build_devrel_agent(
+  con = devrel_con,
   client = ellmer::chat_anthropic(
     model = "claude-sonnet-5",
     params = ellmer::params(reasoning_effort = "high")
-  ),
-  data_sources = list(
-    devrel = data_source(
-      devrel_con,
-      tables = c(
-        "projects",
-        "metrics",
-        "metrics_filled",
-        "indicators",
-        "events",
-        "content",
-        "meta"
-      ),
-      dictionary = "dictionaries/devrel.data-dict.yaml"
-    )
-  ),
-  # Project and site prose crawled from opensource.posit.co by
-  # etl/build-context.R.
-  context_layer = context_layer(
-    files = list.files(
-      "context",
-      pattern = "[.]md$",
-      recursive = TRUE,
-      full.names = TRUE
-    )
   )
 )

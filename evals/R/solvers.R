@@ -12,7 +12,7 @@ make_devrel_solver <- function(con, client_factory = make_solver_client) {
     chats <- vector("list", length(inputs))
 
     for (i in seq_along(inputs)) {
-      agent <- build_devrel_agent(con, client_factory = client_factory)
+      agent <- build_devrel_agent(con, client_factory())
       outcome <- try(run_chat_async(agent, inputs[[i]]), silent = TRUE)
 
       chats[[i]] <- if (inherits(outcome, "try-error")) {
