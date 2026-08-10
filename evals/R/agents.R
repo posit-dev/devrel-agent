@@ -11,7 +11,7 @@ make_devrel_con <- function(db_path = "data/devrel.duckdb") {
 make_solver_client <- function() {
   ellmer::chat_anthropic(
     model = "claude-sonnet-5",
-    params = ellmer::params(reasoning_effort = "high")
+    params = ellmer::params(reasoning_effort = "medium")
   )
 }
 

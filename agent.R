@@ -16,6 +16,6 @@ devrel_agent <- build_devrel_agent(
   con = devrel_con,
   client = ellmer::chat_anthropic(
     model = "claude-sonnet-5",
-    params = ellmer::params(reasoning_effort = "high")
+    params = ellmer::params(reasoning_effort = "medium")
   )
 )

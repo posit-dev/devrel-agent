@@ -1,5 +1,6 @@
 # One closed-book Claude Code run over the same 26 questions as the commons
-# baseline: Sonnet 5 in a container holding a clone of posit-dev/devrel-io.
+# baseline: Sonnet 5 at medium effort in a container holding a clone of
+# posit-dev/devrel-io.
 # Run from the project root:
 #
 #   Rscript evals/claude-code.R
@@ -10,7 +11,7 @@
 source("evals/run.R")
 
 results <- run_eval(
-  name = "devrel-commons-claude-code-closed-book",
+  name = "devrel-commons-claude-code-closed-book-sonnet5-medium",
   make_solver = make_claude_code_solver
 )
 
