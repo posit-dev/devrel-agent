@@ -20,7 +20,7 @@ make_solver_client <- function() {
 # easily exhausted by thinking over long trajectory-bearing prompts.
 make_grader_client <- function() {
   ellmer::chat_anthropic(
-    model = "claude-sonnet-5",
+    model = "claude-opus-5",
     api_args = list(thinking = list(type = "disabled"))
   )
 }

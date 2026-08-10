@@ -138,8 +138,8 @@ numeric_grader_system_prompt <- function() {
     "in the answer is enough; a formal declaration is not required). A correct",
     "number under an unstated interpretation caps the final score at 0.5.",
     "",
-    "The prompt includes the solver's tool trajectory (its queries and",
-    "truncated results). Use it only to establish where the answer's numbers",
+    "The prompt includes the solver's tool trajectory (its queries and full",
+    "results). Use it only to establish where the answer's numbers",
     "came from and what was actually queried -- e.g. whether a value reflects",
     "a stated alternative window, or a missing filter the grading notes warn",
     "about. The grading notes remain the ground truth for expected values, and",
@@ -169,7 +169,7 @@ numeric_grader_prompt <- function(input, answer, target, target_type, trajectory
     "[Grading notes: accepted interpretations, expected values, adjustments]",
     target,
     "",
-    "[Solver tool trajectory: provenance only; results truncated]",
+    "[Solver tool trajectory: provenance only; full results]",
     trajectory,
     "",
     "[Submitted answer]",
@@ -208,7 +208,7 @@ rubric_grader_system_prompt <- function(category) {
     "",
     "The grading facts are a verified subset of the database, not an",
     "inventory of it. The prompt includes the solver's tool trajectory (its",
-    "queries and truncated results); use it to establish provenance. A value,",
+    "queries and full results); use it to establish provenance. A value,",
     "name, or schema term absent from the facts but visible in the",
     "trajectory's queries or results is unverified-but-real, not fabricated.",
     "Fail a fabrication item only on positive evidence: a value that",
@@ -249,7 +249,7 @@ rubric_grader_prompt <- function(input, answer, target, category, trajectory) {
     "[Grading facts]",
     target,
     "",
-    "[Solver tool trajectory: provenance only; results truncated]",
+    "[Solver tool trajectory: provenance only; full results]",
     trajectory,
     "",
     "[Submitted answer]",
@@ -263,7 +263,7 @@ rubric_grader_prompt <- function(input, answer, target, category, trajectory) {
 # The grader sees the solver's tool trajectory so provenance is checkable:
 # numbers from a real query under a stated alternative scope must not grade
 # as fabricated, and a query's actual scope (e.g. a missing dedup filter) is
-# visible. Results are truncated; provenance, not full content, is the point.
+# visible.
 trajectory_digests <- function(samples) {
   chats <- samples$solver_chat
   if (is.null(chats)) {
@@ -272,7 +272,7 @@ trajectory_digests <- function(samples) {
   lapply(chats, solver_trajectory_digest)
 }
 
-solver_trajectory_digest <- function(chat, max_result_chars = 1500) {
+solver_trajectory_digest <- function(chat) {
   if (is.null(chat)) {
     return("(solver trajectory unavailable)")
   }
@@ -287,7 +287,7 @@ solver_trajectory_digest <- function(chat, max_result_chars = 1500) {
         )
         lines <- c(lines, paste0("TOOL CALL ", content@name, ": ", args))
       } else if (inherits(content, "ellmer::ContentToolResult")) {
-        result <- truncate_chars(tool_result_text(content), max_result_chars)
+        result <- tool_result_text(content)
         lines <- c(lines, paste0("RESULT: ", result), "")
       }
     }
@@ -327,13 +327,6 @@ value_text <- function(value) {
     paste(format(value), collapse = "\n"),
     error = function(e) paste0("<", class(value)[[1]], ">")
   )
-}
-
-truncate_chars <- function(text, max_chars) {
-  if (nchar(text) <= max_chars) {
-    return(text)
-  }
-  paste0(substr(text, 1, max_chars), "\n<truncated>")
 }
 
 mean_raw_scores <- function(scores) {
