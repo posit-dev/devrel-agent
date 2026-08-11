@@ -364,6 +364,19 @@ compute_targets <- function(con) {
      GROUP BY type",
     dedup_where
   ))
+  issue_open_without_close <- q1(sprintf(
+    "WITH opened AS (
+       SELECT DISTINCT project, target, ref FROM events
+       WHERE type = 'issue_open' AND datetime < '2026-07-01' AND %s),
+     closed AS (
+       SELECT DISTINCT project, target, ref FROM events
+       WHERE type = 'issue_close' AND datetime < '2026-07-01' AND %s)
+     SELECT COUNT(*) FROM opened o WHERE NOT EXISTS (
+       SELECT 1 FROM closed c
+       WHERE c.project = o.project AND c.target = o.target AND c.ref = o.ref)",
+    dedup_where,
+    dedup_where
+  ))
   shiny_issue_replay <- q(sprintf(
     "SELECT type, COUNT(*) AS n FROM events
      WHERE target = 'rstudio/shiny' AND type IN ('issue_open', 'issue_close') AND %s
@@ -383,7 +396,7 @@ compute_targets <- function(con) {
        GROUP BY target, ref),
      activity AS (
        SELECT target, ref, MAX(datetime) AS last_activity FROM events
-       WHERE source = 'github' AND type IN ('issue_open', 'comment')
+       WHERE source = 'github' AND type IN ('issue_open', 'issue_close', 'comment')
        GROUP BY target, ref)
      SELECT o.target, COUNT(*) AS stale_issues
      FROM open_issues o
@@ -544,13 +557,14 @@ compute_targets <- function(con) {
       collapse = "; "
     ),
     q29_issue_replay = sprintf(
-      "retained events through June 30: naive opens %s minus closes %s = %s; after project-id deduplication, opens %s minus closes %s = %s",
+      "retained events through June 30: naive opens %s minus closes %s = %s; after project-id deduplication, opens %s minus closes %s = %s by row-count balance, or %s distinct opened refs have no retained close because four close-only refs exist",
       fmt(issue_replay$n[issue_replay$type == "issue_open"]),
       fmt(issue_replay$n[issue_replay$type == "issue_close"]),
       fmt(issue_replay$n[issue_replay$type == "issue_open"] - issue_replay$n[issue_replay$type == "issue_close"]),
       fmt(issue_replay_dedup$n[issue_replay_dedup$type == "issue_open"]),
       fmt(issue_replay_dedup$n[issue_replay_dedup$type == "issue_close"]),
-      fmt(issue_replay_dedup$n[issue_replay_dedup$type == "issue_open"] - issue_replay_dedup$n[issue_replay_dedup$type == "issue_close"])
+      fmt(issue_replay_dedup$n[issue_replay_dedup$type == "issue_open"] - issue_replay_dedup$n[issue_replay_dedup$type == "issue_close"]),
+      fmt(issue_open_without_close)
     ),
     q29_shiny_replay = sprintf(
       "deduplicated Shiny event replay gives %s open issues, while current content has %s",

@@ -85,7 +85,8 @@ q28_openvsx_ratings: 'posit/air-vscode: 5.00, 3 reviews (as of 2026-07-09); posi
   rating, 0 reviews (as of 2026-07-09)'
 q29_issue_replay: 'retained events through June 30: naive opens 50,815 minus closes
   39,505 = 11,310; after project-id deduplication, opens 46,778 minus closes 36,747
-  = 10,031'
+  = 10,031 by row-count balance, or 10,035 distinct opened refs have no retained close
+  because four close-only refs exist'
 q29_shiny_replay: deduplicated Shiny event replay gives 809 open issues, while current
   content has 793
 q30_stale_issues: 'rstudio/shiny: 752; rstudio/reticulate: 439; posit-dev/py-shiny:

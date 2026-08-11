@@ -94,18 +94,16 @@ score_rubric <- function(samples, scorer_chat) {
     character(1)
   )
 
-  states <- lapply(seq_len(nrow(samples)), function(i) new.env(parent = emptyenv()))
+  grades <- Map(
+    grade_rubric_sample,
+    prompts,
+    samples$category,
+    MoreArgs = list(scorer_chat = scorer_chat)
+  )
 
-  chats <- lapply(seq_len(nrow(samples)), function(i) {
-    chat <- scorer_chat$clone()
-    chat$set_system_prompt(rubric_grader_system_prompt(samples$category[[i]]))
-    chat$register_tool(tool_submit_grade(samples$category[[i]], states[[i]]))
-    chat$chat(prompts[[i]], echo = "none")
-    chat
-  })
-
-  raw_scores <- lapply(seq_along(states), function(i) states[[i]]$raw_scores)
-  item_reasons <- lapply(seq_along(states), function(i) states[[i]]$item_reasons)
+  chats <- lapply(grades, `[[`, "chat")
+  raw_scores <- lapply(grades, `[[`, "raw_scores")
+  item_reasons <- lapply(grades, `[[`, "item_reasons")
   score <- vapply(raw_scores, mean_raw_scores, numeric(1))
   response <- vapply(chats, grader_response_text, character(1))
 
@@ -126,6 +124,41 @@ score_rubric <- function(samples, scorer_chat) {
       raw_scores,
       item_reasons
     )
+  )
+}
+
+grade_rubric_sample <- function(
+  prompt,
+  category,
+  scorer_chat,
+  max_attempts = 2L,
+  call = rlang::caller_env()
+) {
+  state <- new.env(parent = emptyenv())
+  chat <- scorer_chat$clone()
+  chat$set_system_prompt(rubric_grader_system_prompt(category))
+  chat$register_tool(tool_submit_grade(category, state))
+
+  for (attempt in seq_len(max_attempts)) {
+    current_prompt <- if (attempt == 1L) {
+      prompt
+    } else {
+      "Call `submit_grade` now with the required binary scores and reasons. Do not provide more prose."
+    }
+    chat$chat(current_prompt, echo = "none")
+
+    if (!is.null(state$raw_scores)) {
+      return(list(
+        chat = chat,
+        raw_scores = state$raw_scores,
+        item_reasons = state$item_reasons
+      ))
+    }
+  }
+
+  cli::cli_abort(
+    "The rubric grader did not submit a grade after {max_attempts} attempts.",
+    call = call
   )
 }
 
@@ -151,6 +184,9 @@ numeric_grader_system_prompt <- function() {
     "labels, score each required value, and call `average_scores` -- never",
     "average mentally. Apply any score caps or required-caveat adjustments the",
     "grading notes specify.",
+    "`Target type` describes the grading structure, not the requested answer",
+    "format. Do not deduct for prose instead of a table unless the grading",
+    "notes explicitly require a format.",
     "",
     "Return a concise explanation and end with exactly one line:",
     "SCORE: <number between 0 and 1>.",
@@ -304,7 +340,16 @@ tool_result_text <- function(result) {
   if (!is.null(error)) {
     return(paste0("<tool error: ", paste(format(error), collapse = " "), ">"))
   }
-  value_text(result@value)
+  strip_solver_instructions(value_text(result@value))
+}
+
+strip_solver_instructions <- function(text) {
+  sub(
+    "\\nNote: any answer in this conversation that does not come from a trusted calculation alone[\\s\\S]*$",
+    "",
+    text,
+    perl = TRUE
+  )
 }
 
 # Tool results are not always strings: commons tools can return ellmer

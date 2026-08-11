@@ -474,9 +474,15 @@
     three titles and approximately correct gains. For videos that existed
     before July, growth is the July 28 cumulative snapshot minus the latest
     pre-July snapshot. Videos published during July have a zero baseline;
-    all their lifetime views through July 28 were gained in July. Excluding
-    July releases or summing cumulative snapshots scores 0. The answer must
-    make the July window and partial coverage identifiable.
+    all their lifetime views through July 28 were gained in July. Use
+    average_scores over eight items: three binary rank-identity items for the
+    correct title at each of the first three ranks, three percent_error_score
+    items for those titles' submitted gains (0 if missing), and one binary
+    item for identifying July 2026 coverage through July 28. The final binary
+    item is 1 only if any extra ranked rows use the latest pre-July baseline
+    and the answer does not mistake change-sparse raw rows for incomplete or
+    rotating video coverage. Excluding all July releases or summing cumulative
+    snapshots scores 0.
 
 - id: q28
   category: numeric
@@ -490,9 +496,12 @@
     5.00, not 500 ratings. Ratings are sparse and last appear on July 9;
     inspecting only the latest metrics date wrongly makes them look absent.
     The Shiny extension is collected under shiny-r and shiny-python but is
-    one posit/shiny listing and must appear once. Full credit requires the
-    tie, correct rating scale, and deduplication; review counts and the as-of
-    date may be rounded or summarized but must not be misrepresented.
+    one posit/shiny listing and must appear once. Use average_scores over four
+    binary items: identifies the three-way tie, reports the 5.0 scale rather
+    than 500, reports Shiny once, and includes no inaccurate optional details.
+    Do not deduct for prose rather than a table, omitting unrated extensions,
+    or omitting the as-of date; review counts, unrated statuses, and dates must
+    not be misrepresented when included.
 
 - id: q29
   category: nuanced_answerable
@@ -500,17 +509,19 @@
   input: "how many open github issues did we have at the end of june?"
   target: |
     An exact portfolio total for June 30 cannot be recovered. {q29_issue_replay}.
-    Even the deduplicated 10,031 is only a retained-history estimate: 22
+    Both deduplicated results are only retained-history estimates: 22
     repositories lost their full GitHub histories in the July 28 refetch,
     and the event schema cannot replay every state transition. For example,
     {q29_shiny_replay}. Current content.state is authoritative for current
     state but cannot be rewound to June. correct_logic = either clearly
-    declines an exact count or labels 10,031 as a retained-event estimate;
-    11,310 is not a solid portfolio estimate. filters_scope = avoids
+    declines an exact count or labels 10,031 or 10,035 as a retained-event
+    estimate; 11,310 is not a solid portfolio estimate. filters_scope = avoids
     duplicate project ids and does not use current content as historical
     state. interpretation_limits = names both the missing-history and
     incomplete-event-replay limits. fabrication = no unsupported cause for
-    the discrepancy or unqualified org-wide count.
+    the discrepancy or unqualified org-wide count. A real query does not make
+    an unqualified portfolio count non-fabricated when the facts establish
+    that an exact portfolio count is unavailable.
 
 - id: q30
   category: numeric
@@ -519,13 +530,14 @@
   target: |
     With a 2025-08-11 cutoff, expected top repositories and counts are
     {q30_stale_issues}. Use current OPEN issue state from content, deduplicate
-    on (target, ref), then use the latest issue_open or comment event as the
-    latest observable activity. Full credit requires the top five and
-    approximately correct counts, a stated activity definition, and no
-    duplicate project-id inflation. Labels, assignments, and passive triage
-    are not in the event data, so "touched" is necessarily a proxy. Do not
-    infer that a repository is unmaintained or abandoned from stale-issue
-    counts alone.
+    on (target, ref), then use the latest issue_open, issue_close, or comment
+    event as the latest observable activity. Score the five expected rows with
+    percent_error_score and average_scores, assigning 0 to a missing repo.
+    Score 0 if open state is reconstructed from events or duplicate project
+    ids inflate the counts. Cap at 0.8 if the answer does not state its
+    activity definition or implies labels, assignments, or passive triage are
+    observed. Cap at 0.8 if it infers that a repository is unmaintained or
+    abandoned. Do not deduct for extra rows or prose rather than a table.
 
 - id: q31
   category: nuanced_answerable
@@ -543,9 +555,13 @@
     added to visitor-days. correct_logic = declines a single combined growth
     figure and offers only separately labeled proxies. filters_scope = any
     website calculation uses site-level rows and deduplicates project ids.
-    interpretation_limits = calls summed visitors visitor-days and identifies
-    July's partial coverage. fabrication = no per-page summing, cross-channel
-    addition, or claim of monthly unique people.
+    interpretation_limits = calls summed visitors visitor-days, identifies
+    July's partial coverage, and does not present the June/July totals as a
+    directly comparable growth rate. A coverage or comparability mistake
+    belongs only to interpretation_limits when the underlying website query
+    used site-level, deduplicated rows; do not also fail filters_scope for it.
+    fabrication = no per-page summing, cross-channel addition, or claim of
+    monthly unique people.
 
 - id: q32
   category: nuanced_answerable
@@ -578,5 +594,9 @@
     identifies collection gaps rather than behavioral drops to zero.
     filters_scope = names the missing dates or otherwise locates both gaps
     accurately. interpretation_limits = separates observed spikes from any
-    causal claim. fabrication = no asserted mirror sync, backlog, release,
-    or marketing explanation unsupported by repository evidence.
+    causal claim. fabrication = no asserted mirror sync, backlog, folded or
+    carried-forward downloads, release, marketing, or collection-artifact
+    explanation unsupported by repository evidence. A specific cause offered
+    as likely or probable fails both interpretation_limits and fabrication,
+    even if it is hedged or followed by an uncertainty disclaimer; listing
+    possibilities without preferring one is acceptable.
