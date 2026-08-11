@@ -154,7 +154,7 @@ tables:
           total_reactions: reactions on one issue or PR, keyed by ref (github)
           total_items: items in an RSS feed (rss)
           total_downloads: cumulative extension downloads (openvsx)
-          total_ratings: cumulative rating count (openvsx)
+          total_ratings: average extension rating multiplied by 100 (openvsx)
           total_reviews: cumulative review count (openvsx)
           total_views: cumulative views per video (youtube)
           total_likes: cumulative likes per video (youtube)
