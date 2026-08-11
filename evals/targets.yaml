@@ -31,6 +31,8 @@ q09_pypi: 'PyPI (orbital-python): series starts 2025-07-12 (collection began 202
   28,960 total, 23,222 in 2026 YTD'
 q09_github: 'github activity events all-time (issues, PRs, comments, forks): 267 deduplicated
   vs 801 summed naively across the three orbital ids'
+q09_star_snapshot: 'The open-source software catalog records 117 stars for posit-dev/orbital,
+  updated 2026-05-20; this is a dated snapshot, not star history'
 q10_june25_pageviews: '6,800'
 q11_downloads_matched: 'downloads since 2025-06-04 (PyPI collection start): shiny
   (CRAN) 8,569,174 vs shiny for python (PyPI) 3,476,680'

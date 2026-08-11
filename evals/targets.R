@@ -153,6 +153,12 @@ compute_targets <- function(con) {
       "SELECT SUM(value) FROM metrics
        WHERE source = 'github' AND metric LIKE 'daily_%'
          AND project IN ('orbital', 'orbital-r', 'orbital-python')"
+    ),
+    star = q(
+      "SELECT CAST(json_extract_string(extra, '$.stars') AS BIGINT) AS stars,
+              strftime(updated_at, '%Y-%m-%d') AS updated
+       FROM content
+       WHERE source = 'rss' AND id = 'software/orbital'"
     )
   )
 
@@ -343,6 +349,10 @@ compute_targets <- function(con) {
     q09_github = sprintf(
       "github activity events all-time (issues, PRs, comments, forks): %s deduplicated vs %s summed naively across the three orbital ids",
       fmt(orbital$github_dedup), fmt(orbital$github_naive)
+    ),
+    q09_star_snapshot = sprintf(
+      "The open-source software catalog records %s stars for posit-dev/orbital, updated %s; this is a dated snapshot, not star history",
+      fmt(orbital$star$stars), orbital$star$updated
     ),
     q10_june25_pageviews = fmt(june25_pageviews),
     q11_downloads_matched = sprintf(
