@@ -291,10 +291,12 @@
     either — positron.posit.co site traffic ({q20_positron_sources}) is all
     that remains, so a good answer says growth must be read from that one
     proxy. Verified: site visitor-days grew from {q16_visitors_first} (Dec
-    2024) to {q16_visitors_last} (June 2026) monthly. The site series also
-    changes collection basis at the 2026-06-23 seam, so trends straddling
-    it need care. correct_logic = growth read from stated signals with real
-    numbers. filters_scope = respects coverage windows.
+    2024) to {q16_visitors_last} (June 2026) monthly. On 2026-06-23, overall
+    site totals move from page-less daily_* rows to daily_site_* rows, while
+    daily_* rows become per-page. A correctly stitched site-level series is
+    comparable across that date; per-page visitor counts must not be summed.
+    correct_logic = growth read from stated signals with real numbers.
+    filters_scope = respects coverage windows.
     interpretation_limits = names the no-installs limit; noticing the
     missing github coverage is a plus. fabrication = no invented
     install/user/github figures.
