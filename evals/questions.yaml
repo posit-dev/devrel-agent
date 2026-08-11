@@ -217,11 +217,16 @@
     attributing these to hadley via unchecked world knowledge is the main
     failure. Attribution must be stated AND grounded: either checked
     against contributor activity in the events data, or explicitly labeled
-    as outside-the-data knowledge. correct_logic = right core answer with
-    real numbers. filters_scope = "last couple years" respected; the
-    measure's blind spots acknowledged if relevant. interpretation_limits =
-    states how "hadley's" and "taken off" were operationalized.
-    fabrication = no unchecked attribution presented as fact.
+    as outside-the-data knowledge. events.username records contributor
+    activity, not formal package authorship. correct_logic = identifies
+    ellmer as the leading recent package under the stated measure, using real
+    values. filters_scope = respects the stated time window and applies the
+    chosen measure consistently. If github activity is used, omitting ggsql
+    without explaining why it falls outside the stated scope fails this
+    item. A downloads-only analysis may omit ggsql if it acknowledges that
+    blind spot. interpretation_limits = explains how "hadley's" and "taken
+    off" were operationalized. fabrication = no attribution is presented as
+    data-backed without support; clearly disclosed outside knowledge passes.
 
 - id: q13
   category: nuanced_answerable
@@ -295,11 +300,17 @@
     site totals move from page-less daily_* rows to daily_site_* rows, while
     daily_* rows become per-page. A correctly stitched site-level series is
     comparable across that date; per-page visitor counts must not be summed.
-    correct_logic = growth read from stated signals with real numbers.
-    filters_scope = respects coverage windows.
-    interpretation_limits = names the no-installs limit; noticing the
-    missing github coverage is a plus. fabrication = no invented
-    install/user/github figures.
+    correct_logic = gives a verdict consistent with correctly computed
+    site-level traffic and real values. filters_scope = uses page-less
+    daily_* totals before 2026-06-23 and daily_site_* totals afterward, does
+    not sum per-page visitor rows, and identifies partial periods when
+    relevant. Do not require the final answer to explain the representation
+    change when the solver trajectory handles it correctly.
+    interpretation_limits = says site traffic is only a proxy and that
+    install or user counts are unavailable; noticing the missing github
+    history is a plus. fabrication = no invented install, user, or github
+    figures or unsupported explanation for traffic changes presented as
+    fact.
 
 - id: q17
   category: nuanced_answerable
@@ -350,10 +361,17 @@
     ({q19_tags}), and the python tag misses PyPI-roster packages
     (querychat, raghilda) — treating those tags as a census understates
     the python footprint; a careful answer either avoids the tags or flags
-    their sparsity. correct_logic = output proxies, correctly computed.
-    filters_scope = does not present the sparse tag census as complete.
-    interpretation_limits = says investment itself is not observable here.
-    fabrication = no invented spend/headcount figures.
+    their sparsity. correct_logic = says investment itself is unavailable
+    and uses correctly computed output proxies. filters_scope = a tag-based
+    analysis passes when it is clearly labeled as covering only the tagged
+    subset and is not presented as the complete Python portfolio; it need
+    not enumerate every omitted project or quote the exact tag-coverage
+    statistic. interpretation_limits = says spend and headcount are not
+    observable and names the proxy being used. fabrication = no invented
+    investment or proxy values and no unsupported claims about omitted
+    projects. Calling unqueried projects inactive or archival fails this
+    item; do not also fail scope when the tagged subset was clearly
+    disclosed.
 
 - id: q20
   category: not_answerable
