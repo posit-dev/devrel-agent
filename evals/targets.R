@@ -182,7 +182,7 @@ compute_targets <- function(con) {
     "SELECT project, COUNT(*) AS n FROM events
      WHERE username = 'hadley'
        AND project IN ('ellmer', 'ggsql', 'btw', 'mcptools', 'vitals', 'shinychat', 'querychat')
-     GROUP BY project ORDER BY n DESC"
+     GROUP BY project ORDER BY n DESC, project"
   )
   ellmer_cran <- q1(
     "SELECT SUM(value) FROM metrics
@@ -203,7 +203,7 @@ compute_targets <- function(con) {
      WHERE type IN ('pr_open', 'pr_merge') AND username IN ('hadley', 'jcheng5')
      GROUP BY project
      HAVING hadley > 0 AND joe > 0
-     ORDER BY hadley + joe DESC LIMIT 8"
+     ORDER BY hadley + joe DESC, project DESC LIMIT 8"
   )
 
   dplyr_docs <- q1(
@@ -316,6 +316,119 @@ compute_targets <- function(con) {
 
   workflows_target <- q1("SELECT DISTINCT target FROM content WHERE project = 'workflows'")
 
+  video_growth <- q(
+    "WITH latest AS (
+       SELECT video_id, MAX(date) AS d FROM metrics
+       WHERE source = 'youtube' AND metric = 'total_views'
+         AND video_id IS NOT NULL AND date <= '2026-07-31'
+       GROUP BY video_id),
+     baseline AS (
+       SELECT video_id, MAX(date) AS d FROM metrics
+       WHERE source = 'youtube' AND metric = 'total_views'
+         AND video_id IS NOT NULL AND date < '2026-07-01'
+       GROUP BY video_id),
+     published AS (
+       SELECT id AS video_id, MIN(published_at) AS published_at, MIN(title) AS title
+       FROM content WHERE source = 'youtube' GROUP BY id)
+     SELECT p.title,
+            m.value - CASE WHEN p.published_at >= '2026-07-01' THEN 0 ELSE b.value END AS views
+     FROM latest l
+     JOIN metrics m ON m.video_id = l.video_id AND m.date = l.d AND m.metric = 'total_views'
+     LEFT JOIN baseline bl ON bl.video_id = l.video_id
+     LEFT JOIN metrics b ON b.video_id = bl.video_id AND b.date = bl.d AND b.metric = 'total_views'
+     JOIN published p ON p.video_id = l.video_id
+     ORDER BY views DESC LIMIT 5"
+  )
+
+  openvsx_ratings <- q(
+    "WITH latest AS (
+       SELECT target, metric, arg_max(value, date) AS value, MAX(date) AS date
+       FROM metrics
+       WHERE source = 'openvsx' AND metric IN ('total_ratings', 'total_reviews')
+       GROUP BY target, metric)
+     SELECT target,
+            MAX(value) FILTER (WHERE metric = 'total_ratings') / 100.0 AS rating,
+            MAX(value) FILTER (WHERE metric = 'total_reviews') AS reviews,
+            MAX(date) AS as_of
+     FROM latest GROUP BY target ORDER BY rating DESC NULLS LAST, target"
+  )
+
+  issue_replay <- q(
+    "SELECT type, COUNT(*) AS n FROM events
+     WHERE type IN ('issue_open', 'issue_close') AND datetime < '2026-07-01'
+     GROUP BY type"
+  )
+  issue_replay_dedup <- q(sprintf(
+    "SELECT type, COUNT(*) AS n FROM events
+     WHERE type IN ('issue_open', 'issue_close') AND datetime < '2026-07-01' AND %s
+     GROUP BY type",
+    dedup_where
+  ))
+  shiny_issue_replay <- q(sprintf(
+    "SELECT type, COUNT(*) AS n FROM events
+     WHERE target = 'rstudio/shiny' AND type IN ('issue_open', 'issue_close') AND %s
+     GROUP BY type",
+    dedup_where
+  ))
+  shiny_open_current <- q1(
+    "SELECT COUNT(*) FROM (
+       SELECT DISTINCT target, ref FROM content
+       WHERE target = 'rstudio/shiny' AND type = 'issue' AND state = 'OPEN')"
+  )
+
+  stale_issues <- q(
+    "WITH open_issues AS (
+       SELECT target, ref FROM content
+       WHERE source = 'github' AND type = 'issue' AND state = 'OPEN'
+       GROUP BY target, ref),
+     activity AS (
+       SELECT target, ref, MAX(datetime) AS last_activity FROM events
+       WHERE source = 'github' AND type IN ('issue_open', 'comment')
+       GROUP BY target, ref)
+     SELECT o.target, COUNT(*) AS stale_issues
+     FROM open_issues o
+     JOIN activity a USING (target, ref)
+     WHERE a.last_activity < '2025-08-11'
+     GROUP BY o.target ORDER BY stale_issues DESC LIMIT 5"
+  )
+
+  audience_visitors <- q(sprintf(
+    "SELECT strftime(date_trunc('month', date), '%%Y-%%m') AS period,
+            COUNT(DISTINCT date) AS n_days, SUM(value) AS visitor_days
+     FROM metrics
+     WHERE source = 'plausible' AND date BETWEEN '2026-06-01' AND '2026-07-31'
+       AND (metric = 'daily_site_visitors' OR (metric = 'daily_visitors' AND page IS NULL))
+       AND %s
+     GROUP BY period ORDER BY period",
+    dedup_where
+  ))
+  youtube_subscribers <- q(
+    "SELECT arg_min(value, date) FILTER (WHERE date >= '2026-07-01') AS first_value,
+            arg_max(value, date) FILTER (WHERE date >= '2026-07-01') AS last_value,
+            MIN(date) FILTER (WHERE date >= '2026-07-01') AS first_date,
+            MAX(date) FILTER (WHERE date >= '2026-07-01') AS last_date
+     FROM metrics WHERE source = 'youtube' AND metric = 'total_subscribers'"
+  )
+
+  tidyverse_july <- q(
+    "SELECT MIN(date) AS first_date, MAX(date) AS last_date,
+            COUNT(DISTINCT date) AS n_days, SUM(value) AS downloads
+     FROM metrics
+     WHERE project = 'tidyverse' AND source = 'cran' AND metric = 'daily_downloads'
+       AND date BETWEEN '2026-07-01' AND '2026-07-31'"
+  )
+
+  cran_august <- q(
+    "SELECT date, SUM(value) AS downloads FROM metrics
+     WHERE source = 'cran' AND metric = 'daily_downloads'
+       AND date BETWEEN '2025-08-20' AND '2025-09-05'
+     GROUP BY date ORDER BY date"
+  )
+  cran_august_missing <- setdiff(
+    seq(as.Date("2025-08-20"), as.Date("2025-09-05"), by = "day"),
+    cran_august$date
+  )
+
   list(
     snapshot_date = snapshot_date,
     q01_june_2026 = fmt(dplyr_month("2026-06-01", "2026-06-30")),
@@ -418,7 +531,54 @@ compute_targets <- function(con) {
       fmt(response_time$issues), fmt(response_time$answered),
       response_time$median_hours, response_time$p75_hours
     ),
-    q26_workflows_target = workflows_target
+    q26_workflows_target = workflows_target,
+    q27_video_growth = fmt_rows(video_growth, "title", "views"),
+    q28_openvsx_ratings = paste(
+      sprintf(
+        "%s: %s%s reviews (as of %s)",
+        openvsx_ratings$target,
+        ifelse(is.na(openvsx_ratings$rating), "no rating, ", sprintf("%.2f, ", openvsx_ratings$rating)),
+        vapply(openvsx_ratings$reviews, fmt, character(1)),
+        openvsx_ratings$as_of
+      ),
+      collapse = "; "
+    ),
+    q29_issue_replay = sprintf(
+      "retained events through June 30: naive opens %s minus closes %s = %s; after project-id deduplication, opens %s minus closes %s = %s",
+      fmt(issue_replay$n[issue_replay$type == "issue_open"]),
+      fmt(issue_replay$n[issue_replay$type == "issue_close"]),
+      fmt(issue_replay$n[issue_replay$type == "issue_open"] - issue_replay$n[issue_replay$type == "issue_close"]),
+      fmt(issue_replay_dedup$n[issue_replay_dedup$type == "issue_open"]),
+      fmt(issue_replay_dedup$n[issue_replay_dedup$type == "issue_close"]),
+      fmt(issue_replay_dedup$n[issue_replay_dedup$type == "issue_open"] - issue_replay_dedup$n[issue_replay_dedup$type == "issue_close"])
+    ),
+    q29_shiny_replay = sprintf(
+      "deduplicated Shiny event replay gives %s open issues, while current content has %s",
+      fmt(shiny_issue_replay$n[shiny_issue_replay$type == "issue_open"] - shiny_issue_replay$n[shiny_issue_replay$type == "issue_close"]),
+      fmt(shiny_open_current)
+    ),
+    q30_stale_issues = fmt_rows(stale_issues, "target", "stale_issues"),
+    q31_visitor_days = paste(
+      sprintf(
+        "%s: %s visitor-days over %s days",
+        audience_visitors$period,
+        vapply(audience_visitors$visitor_days, fmt, character(1)),
+        audience_visitors$n_days
+      ),
+      collapse = "; "
+    ),
+    q31_youtube_subscribers = sprintf(
+      "YouTube subscribers rose from %s on %s to %s on %s",
+      fmt(youtube_subscribers$first_value), youtube_subscribers$first_date,
+      fmt(youtube_subscribers$last_value), youtube_subscribers$last_date
+    ),
+    q32_tidyverse_july = sprintf(
+      "%s CRAN downloads for the tidyverse meta-package from %s through %s (%s observed days)",
+      fmt(tidyverse_july$downloads), tidyverse_july$first_date,
+      tidyverse_july$last_date, tidyverse_july$n_days
+    ),
+    q33_cran_missing_dates = paste(as.character(cran_august_missing), collapse = ", "),
+    q33_cran_observed = fmt_rows(cran_august, "date", "downloads")
   )
 }
 

@@ -31,15 +31,15 @@ q09_pypi: 'PyPI (orbital-python): series starts 2025-07-12 (collection began 202
   28,960 total, 23,222 in 2026 YTD'
 q09_github: 'github activity events all-time (issues, PRs, comments, forks): 267 deduplicated
   vs 801 summed naively across the three orbital ids'
-q09_star_snapshot: 'The open-source software catalog records 117 stars for posit-dev/orbital,
-  updated 2026-05-20; this is a dated snapshot, not star history'
+q09_star_snapshot: The open-source software catalog records 117 stars for posit-dev/orbital,
+  updated 2026-05-20; this is a dated snapshot, not star history
 q10_june25_pageviews: '6,800'
 q11_downloads_matched: 'downloads since 2025-06-04 (PyPI collection start): shiny
   (CRAN) 8,569,174 vs shiny for python (PyPI) 3,476,680'
 q11_activity_yearly: '2023: rstudio/shiny 887 vs py-shiny 1,666; 2024: rstudio/shiny
   848 vs py-shiny 2,430; 2025: rstudio/shiny 718 vs py-shiny 1,114; 2026: rstudio/shiny
   324 vs py-shiny 614'
-q12_hadley_events: 'ellmer: 1,663; ggsql: 39; vitals: 5; mcptools: 5; querychat: 1;
+q12_hadley_events: 'ellmer: 1,663; ggsql: 39; mcptools: 5; vitals: 5; querychat: 1;
   shinychat: 1'
 q12_ellmer_cran: '175,928'
 q12_ggsql_activity: 'daily_comments: 469; daily_prs_opened: 264; daily_prs_merged:
@@ -74,3 +74,30 @@ q24_tidyverse_repos: '5 tidyverse-org repos are tracked: tidyverse/dplyr, tidyve
 q24_response_time: 'issues opened in tidyverse repos since 2025-07-01: 573 issues,
   440 got a comment, median 3.5 hours to first comment (p75 46 hours)'
 q26_workflows_target: posit-dev/Workflows
+q27_video_growth: "Mind-Blowing Quarto Slide Extensions \U0001F4AC \U0001F58D️ \U0001F92F
+  | Emil Hvitfeldt | Data Science Lab: 2,926; How do you pronounce \"dplyr\"?: 2,350;
+  Python libraries for the Polars-pilled: 1,922; WORK OUT LOUD. It's nerve-wracking,
+  but worth it \U0001F624: 1,135; Shiny is... *too* easy? \U0001F605 Uh oh \U0001FAE3:
+  1,077"
+q28_openvsx_ratings: 'posit/air-vscode: 5.00, 3 reviews (as of 2026-07-09); posit/shiny:
+  5.00, 2 reviews (as of 2026-07-09); quarto/quarto: 5.00, 2 reviews (as of 2026-07-09);
+  posit/publisher: no rating, 0 reviews (as of 2026-07-09); posit/shinyuieditor: no
+  rating, 0 reviews (as of 2026-07-09)'
+q29_issue_replay: 'retained events through June 30: naive opens 50,815 minus closes
+  39,505 = 11,310; after project-id deduplication, opens 46,778 minus closes 36,747
+  = 10,031'
+q29_shiny_replay: deduplicated Shiny event replay gives 809 open issues, while current
+  content has 793
+q30_stale_issues: 'rstudio/shiny: 752; rstudio/reticulate: 439; posit-dev/py-shiny:
+  370; rstudio/leaflet: 295; rstudio/gt: 256'
+q31_visitor_days: '2026-06: 364,680 visitor-days over 30 days; 2026-07: 261,187 visitor-days
+  over 28 days'
+q31_youtube_subscribers: YouTube subscribers rose from 47,500 on 2026-07-01 to 47,700
+  on 2026-07-26
+q32_tidyverse_july: 782,695 CRAN downloads for the tidyverse meta-package from 2026-07-01
+  through 2026-07-27 (27 observed days)
+q33_cran_missing_dates: 2025-08-25, 2025-08-26, 2025-08-29, 2025-08-30, 2025-08-31,
+  2025-09-01, 2025-09-02
+q33_cran_observed: '2025-08-20: 181,636; 2025-08-21: 169,246; 2025-08-22: 176,885;
+  2025-08-23: 156,106; 2025-08-24: 332,284; 2025-08-27: 406,719; 2025-08-28: 398,813;
+  2025-09-03: 223,317; 2025-09-04: 235,529; 2025-09-05: 201,557'

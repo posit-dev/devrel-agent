@@ -463,3 +463,120 @@
     tidyverse numbers for tidymodels fails provenance. Correct limitation:
     this data does not cover tidymodels. An answer that says so and stops,
     or offers outside knowledge clearly labeled, is good.
+
+- id: q27
+  category: numeric
+  target_type: table
+  input: "which videos got the most views last month?"
+  target: |
+    "Last month" is July 2026, with data through July 28. Expected leaders
+    by views gained: {q27_video_growth}. Full credit requires the leading
+    three titles and approximately correct gains. For videos that existed
+    before July, growth is the July 28 cumulative snapshot minus the latest
+    pre-July snapshot. Videos published during July have a zero baseline;
+    all their lifetime views through July 28 were gained in July. Excluding
+    July releases or summing cumulative snapshots scores 0. The answer must
+    make the July window and partial coverage identifiable.
+
+- id: q28
+  category: numeric
+  target_type: table
+  input: "which vscode extension has the best rating?"
+  target: |
+    Latest observed OpenVSX ratings: {q28_openvsx_ratings}. Air, Shiny, and
+    Quarto are tied at 5.0; Air has three reviews, while Shiny and Quarto
+    have two. Publisher and Shiny UI Editor have no rating. The stored
+    total_ratings value is averageRating multiplied by 100, so 500 means
+    5.00, not 500 ratings. Ratings are sparse and last appear on July 9;
+    inspecting only the latest metrics date wrongly makes them look absent.
+    The Shiny extension is collected under shiny-r and shiny-python but is
+    one posit/shiny listing and must appear once. Full credit requires the
+    tie, correct rating scale, and deduplication; review counts and the as-of
+    date may be rounded or summarized but must not be misrepresented.
+
+- id: q29
+  category: nuanced_answerable
+  target_type: rubric
+  input: "how many open github issues did we have at the end of june?"
+  target: |
+    An exact portfolio total for June 30 cannot be recovered. {q29_issue_replay}.
+    Even the deduplicated 10,031 is only a retained-history estimate: 22
+    repositories lost their full GitHub histories in the July 28 refetch,
+    and the event schema cannot replay every state transition. For example,
+    {q29_shiny_replay}. Current content.state is authoritative for current
+    state but cannot be rewound to June. correct_logic = either clearly
+    declines an exact count or labels 10,031 as a retained-event estimate;
+    11,310 is not a solid portfolio estimate. filters_scope = avoids
+    duplicate project ids and does not use current content as historical
+    state. interpretation_limits = names both the missing-history and
+    incomplete-event-replay limits. fabrication = no unsupported cause for
+    the discrepancy or unqualified org-wide count.
+
+- id: q30
+  category: numeric
+  target_type: table
+  input: "which repos have issues nobody has touched in a year?"
+  target: |
+    With a 2025-08-11 cutoff, expected top repositories and counts are
+    {q30_stale_issues}. Use current OPEN issue state from content, deduplicate
+    on (target, ref), then use the latest issue_open or comment event as the
+    latest observable activity. Full credit requires the top five and
+    approximately correct counts, a stated activity definition, and no
+    duplicate project-id inflation. Labels, assignments, and passive triage
+    are not in the event data, so "touched" is necessarily a proxy. Do not
+    infer that a repository is unmaintained or abandoned from stale-issue
+    counts alone.
+
+- id: q31
+  category: nuanced_answerable
+  target_type: rubric
+  input: "how much did our total audience grow last month?"
+  target: |
+    There is no additive total-audience measure: website visitors, YouTube
+    subscribers, downloads, and GitHub activity represent different units
+    and overlapping populations. Verified website proxy after selecting
+    site-level rows and deduplicating shared targets: {q31_visitor_days}.
+    These are visitor-days, not distinct people; July is partial through the
+    28th and the site roster differs from June, so the monthly totals are not
+    directly comparable. A daily average is acceptable if computed from
+    those day counts. Separately, {q31_youtube_subscribers}; this must not be
+    added to visitor-days. correct_logic = declines a single combined growth
+    figure and offers only separately labeled proxies. filters_scope = any
+    website calculation uses site-level rows and deduplicates project ids.
+    interpretation_limits = calls summed visitors visitor-days and identifies
+    July's partial coverage. fabrication = no per-page summing, cross-channel
+    addition, or claim of monthly unique people.
+
+- id: q32
+  category: nuanced_answerable
+  target_type: rubric
+  input: "how many tidyverse downloads were there in july?"
+  target: |
+    "tidyverse" may mean the CRAN meta-package or the broader package family.
+    Verified meta-package result: {q32_tidyverse_july}. The project id covers
+    only that package, not a family rollup, and sparse project language tags
+    cannot define a complete family roster. correct_logic = makes the chosen
+    meaning explicit, notes the ambiguity, or asks for clarification.
+    filters_scope = reports the verified value explicitly as the meta-package,
+    or defines and applies a defensible family roster while disclosing that
+    tracked subset.
+    interpretation_limits = identifies the partial July coverage through the
+    27th when giving the verified value. fabrication = does not present the
+    meta-package count as a family total or invent an undisclosed roster.
+
+- id: q33
+  category: nuanced_answerable
+  target_type: rubric
+  input: "what happened to cran downloads around the end of august 2025?"
+  target: |
+    No CRAN rows exist on {q33_cran_missing_dates}; missing rows are not zero
+    downloads. Observed tracked-package totals around the gap are
+    {q33_cran_observed}. The database shows large adjacent spikes but does not
+    establish their cause. The documented general limitation that cranlogs
+    had not published on some fetch days and those days were not backfilled
+    is acceptable, but it does not explain the spikes. correct_logic =
+    identifies collection gaps rather than behavioral drops to zero.
+    filters_scope = names the missing dates or otherwise locates both gaps
+    accurately. interpretation_limits = separates observed spikes from any
+    causal claim. fabrication = no asserted mirror sync, backlog, release,
+    or marketing explanation unsupported by repository evidence.
