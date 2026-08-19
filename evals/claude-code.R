@@ -13,7 +13,7 @@ source("evals/run.R")
 results <- run_eval(
   name = "devrel-commons-claude-code-closed-book-sonnet5-medium",
   make_solver = make_claude_code_solver,
-  epochs = 2
+  epochs = 3
 )
 
 cols <- c("id", "category", "score", "latency_sec", "input_tokens", "output_tokens")
