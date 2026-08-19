@@ -17,7 +17,7 @@ details: >-
   must never be summed across days — read them from `metrics_filled` (which
   carries the last known value forward to every day) or take
   {{net_increase}} over a date range. Route questions accordingly: governed
-  metrics and filters first (query_metrics, or {{name}} tokens in SQL);
+  metrics and filters first (call_metrics, or {{name}} tokens in SQL);
   `metrics` for daily series; `metrics_filled` for anything `total_*`;
   `indicators` for pre-computed 28-day growth and trend; `events` when
   per-user or per-timestamp detail matters; `content` for the titles, text,
@@ -192,7 +192,6 @@ tables:
       # series is continuous (shiny-r's has a gap-producing row shape
       # before the seam).
       - name: deduplicated
-        type: boolean
         label: apply to any cross-project aggregate
         description: >-
           Counts each tracked thing exactly once. A few repos and sites are
@@ -209,7 +208,6 @@ tables:
       # so the eras never overlap within a kept project and no date clamp
       # is needed; the one cross-project overlap is deduplicated's job.
       - name: site_traffic
-        type: boolean
         label: site-level rows, both collection eras
         description: >-
           Site-level website analytics rows across both collection eras.
@@ -222,14 +220,12 @@ tables:
                 AND metric IN ('daily_pageviews', 'daily_visitors', 'daily_visits'))
                OR metric LIKE 'daily_site_%')
       - name: page_traffic
-        type: boolean
         label: per-page rows, since 2026-03-02
         description: >-
           Per-page website analytics rows. Per-page data starts 2026-03-02;
           earlier page-level questions cannot be answered.
         expr: page IS NOT NULL
       - name: pre_seam
-        type: boolean
         label: before the 2026-06-23 collection seam
         description: >-
           Rows collected before the 2026-06-23 collection-system migration,
@@ -237,7 +233,6 @@ tables:
           Use when a question needs one Plausible collection era only.
         expr: date <= '2026-06-22'
       - name: traffic_metric
-        type: string
         label: canonical site-metric name across eras
         description: >-
           The canonical website metric name: maps the newer daily_site_*
@@ -250,15 +245,7 @@ tables:
             WHEN metric = 'daily_site_visits' THEN 'daily_visits'
             ELSE metric
           END
-      # date_trunc is outside data-dict's expression grammar (its one
-      # deviation here); kept because time axes are this agent's modal
-      # question shape.
-      - name: month
-        type: date
-        description: The row's calendar month, for monthly rollups.
-        expr: CAST(date_trunc('month', date) AS DATE)
       - name: cran_downloads
-        type: number(quantity)
         description: >-
           CRAN package downloads, deduplicated. Includes automated traffic
           (mirrors, CI, caching); indicates scale and trend, not user counts.
@@ -266,27 +253,27 @@ tables:
           undercount. Do not combine with pypi_downloads: the registries have
           different counting semantics.
         expr: >-
-          SUM(value) FILTER (WHERE source = 'cran'
-            AND metric = 'daily_downloads' AND deduplicated)
+          SUM(CASE WHEN source = 'cran'
+            AND metric = 'daily_downloads' AND deduplicated
+            THEN value ELSE 0 END)
       - name: pypi_downloads
-        type: number(quantity)
         description: >-
           PyPI package downloads, deduplicated and excluding known mirrors.
           Includes automated traffic (CI and caching); indicates scale and
           trend, not user counts. Do not combine with cran_downloads: the
           registries have different counting semantics.
         expr: >-
-          SUM(value) FILTER (WHERE source = 'pypi'
-            AND metric = 'daily_downloads' AND deduplicated)
+          SUM(CASE WHEN source = 'pypi'
+            AND metric = 'daily_downloads' AND deduplicated
+            THEN value ELSE 0 END)
       - name: pageviews
-        type: number(quantity)
         description: >-
           Site-level pageviews across both collection eras, deduplicated.
         expr: >-
-          SUM(value) FILTER (WHERE site_traffic
-            AND traffic_metric = 'daily_pageviews' AND deduplicated)
+          SUM(CASE WHEN site_traffic
+            AND traffic_metric = 'daily_pageviews' AND deduplicated
+            THEN value ELSE 0 END)
       - name: visitors
-        type: number(quantity)
         label: visitor-days, not distinct people
         description: >-
           Sum of DAILY unique visitors, site-level, both eras, deduplicated.
@@ -294,16 +281,17 @@ tables:
           overstates distinct people; present as visitor-days or a daily
           average.
         expr: >-
-          SUM(value) FILTER (WHERE site_traffic
-            AND traffic_metric = 'daily_visitors' AND deduplicated)
+          SUM(CASE WHEN site_traffic
+            AND traffic_metric = 'daily_visitors' AND deduplicated
+            THEN value ELSE 0 END)
       - name: visits
-        type: number(quantity)
         description: >-
           Site-level visits/sessions across both collection eras,
           deduplicated.
         expr: >-
-          SUM(value) FILTER (WHERE site_traffic
-            AND traffic_metric = 'daily_visits' AND deduplicated)
+          SUM(CASE WHEN site_traffic
+            AND traffic_metric = 'daily_visits' AND deduplicated
+            THEN value ELSE 0 END)
 
   - name: metrics_filled
     description: >-
@@ -358,7 +346,6 @@ tables:
     definitions:
       # Same duplicate-target audit as metrics.deduplicated (2026-07-29).
       - name: deduplicated
-        type: boolean
         label: apply to any cross-project aggregate
         description: >-
           Counts each tracked thing exactly once; see metrics. Apply to any
@@ -368,7 +355,6 @@ tables:
           AND NOT (project = 'orbital-python' AND source = 'github')
           AND NOT (project = 'shiny-r' AND target IN ('posit/shiny', 'shiny.posit.co'))
       - name: net_increase
-        type: number(quantity)
         label: growth of a total_* over a date range
         description: >-
           How much a cumulative total_* value grew over the queried date
@@ -400,6 +386,10 @@ tables:
         description: >-
           Collection source. Only sources with daily_* series appear;
           OpenVSX, YouTube, and RSS report totals only.
+      - name: target
+        type: string
+        description: >-
+          Source-specific identifier, such as a repository, package, or site.
       - name: metric
         type: string
         description: >-
@@ -420,7 +410,6 @@ tables:
     definitions:
       # Same duplicate-target audit as metrics.deduplicated (2026-07-24).
       - name: deduplicated
-        type: boolean
         label: apply to any cross-project aggregate
         description: >-
           Counts each tracked thing exactly once; see metrics. Apply to any
@@ -485,7 +474,6 @@ tables:
     definitions:
       # Same duplicate-target audit as metrics.deduplicated (2026-07-29).
       - name: deduplicated
-        type: boolean
         label: apply to any cross-project aggregate
         description: >-
           Counts each event exactly once; a few repos record their events
@@ -641,7 +629,6 @@ tables:
     definitions:
       # Same duplicate-target audit as metrics.deduplicated (2026-07-29).
       - name: deduplicated
-        type: boolean
         label: apply to any cross-project aggregate
         description: >-
           Counts each item exactly once; a few repos file their issues and
