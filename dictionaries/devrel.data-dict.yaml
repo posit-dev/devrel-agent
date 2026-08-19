@@ -30,14 +30,12 @@ details: >-
   project id with duplicated values — never aggregate across projects
   without the {{deduplicated}} filter. GitHub star history is missing
   entirely from this snapshot (see the `stars` glossary entry); star
-  questions cannot be answered. The current agent database predates a known
-  upstream month-end compaction defect: devrel-io snapshots from 2026-08-01
-  onward are missing eight July RSS total_items snapshots and nine July
-  GitHub events (vip: 4, chatlas: 2, shiny-issue-triage: 2,
-  py-shiny-site: 1). If this agent is refreshed before upstream repair, do
-  not use July total_items for RSS-feed growth and describe July GitHub
-  activity for those projects as slightly undercounted. RSS content rows
-  are unaffected.
+  questions cannot be answered. The current agent database includes a known
+  upstream month-end compaction defect: it is missing eight July RSS
+  total_items snapshots and nine July GitHub events (vip: 4, chatlas: 2,
+  shiny-issue-triage: 2, py-shiny-site: 1). Do not use July total_items for
+  RSS-feed growth, and describe July GitHub activity for those projects as
+  slightly undercounted. RSS content rows are unaffected.
 
 version:
   date: '2026-08-10'
