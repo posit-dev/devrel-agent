@@ -3,3 +3,4 @@ context/
 data/
 .env
 evals/logs-backup/
+.shinychat/
