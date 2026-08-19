@@ -4,9 +4,7 @@ source("agent.R")
 
 welcome_message <- paste(
   "### DevRel Agent",
-  "\n\nInvestigate adoption, engagement, and growth across Posit's open source projects.",
-  "\n\nUses data from GitHub, CRAN, PyPI, Plausible, OpenVSX, YouTube, and RSS feeds.",
-  "\n\nTry one of these:\n\n",
+  "\n\nInvestigate adoption, engagement, and growth across Posit's open source projects.\n\n",
   "- <span class='suggestion'>How many CRAN downloads did dplyr get last month?</span>\n",
   "- <span class='suggestion'>Which projects had the most website pageviews last month?</span>\n",
   "- <span class='suggestion'>What makes Air fast?</span>\n"
