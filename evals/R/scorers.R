@@ -60,7 +60,7 @@ score_numeric_like <- function(samples, scorer_chat) {
     chat$set_system_prompt(numeric_grader_system_prompt())
     chat$register_tool(tool_percent_error_score())
     chat$register_tool(tool_average_scores())
-    chat$chat(prompt, echo = "none")
+    chat_with_retries(chat, prompt)
     chat
   })
 
@@ -131,7 +131,7 @@ grade_rubric_sample <- function(
   prompt,
   category,
   scorer_chat,
-  max_attempts = 2L,
+  max_attempts = 4L,
   call = rlang::caller_env()
 ) {
   state <- new.env(parent = emptyenv())
@@ -140,12 +140,26 @@ grade_rubric_sample <- function(
   chat$register_tool(tool_submit_grade(category, state))
 
   for (attempt in seq_len(max_attempts)) {
+    if (attempt > 2L) {
+      state <- new.env(parent = emptyenv())
+      chat <- scorer_chat$clone()
+      chat$set_system_prompt(rubric_grader_system_prompt(category))
+      chat$register_tool(tool_submit_grade(category, state))
+    }
+
     current_prompt <- if (attempt == 1L) {
       prompt
-    } else {
+    } else if (attempt == 2L) {
       "Call `submit_grade` now with the required binary scores and reasons. Do not provide more prose."
+    } else {
+      paste(
+        prompt,
+        "",
+        "Call `submit_grade` now with the required binary scores and reasons. Do not provide prose outside the tool call.",
+        sep = "\n"
+      )
     }
-    chat$chat(current_prompt, echo = "none")
+    chat_with_retries(chat, current_prompt, call = call)
 
     if (!is.null(state$raw_scores)) {
       return(list(
@@ -158,6 +172,37 @@ grade_rubric_sample <- function(
 
   cli::cli_abort(
     "The rubric grader did not submit a grade after {max_attempts} attempts.",
+    call = call
+  )
+}
+
+chat_with_retries <- function(
+  chat,
+  prompt,
+  max_attempts = 4L,
+  call = rlang::caller_env()
+) {
+  for (attempt in seq_len(max_attempts)) {
+    error <- tryCatch(
+      {
+        chat$chat(prompt, echo = "none")
+        NULL
+      },
+      error = identity
+    )
+
+    if (is.null(error)) {
+      return(invisible(chat))
+    }
+
+    if (attempt < max_attempts) {
+      Sys.sleep(2^attempt)
+    }
+  }
+
+  cli::cli_abort(
+    "The grader request failed after {max_attempts} attempts.",
+    parent = error,
     call = call
   )
 }
