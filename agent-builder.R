@@ -16,15 +16,6 @@ build_devrel_agent <- function(con, client) {
         dictionary = "dictionaries/devrel.data-dict.yaml"
       )
     ),
-    # Project and site prose crawled from opensource.posit.co.
-    context_layer = commons::context_layer(
-      files = list.files(
-        "context",
-        pattern = "[.]md$",
-        recursive = TRUE,
-        full.names = TRUE
-      )
-    ),
     instructions = "instructions.md"
   )
 }
