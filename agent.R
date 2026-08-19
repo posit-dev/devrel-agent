@@ -14,8 +14,8 @@ devrel_con <- DBI::dbConnect(
 
 devrel_agent <- build_devrel_agent(
   con = devrel_con,
-  client = ellmer::chat_anthropic(
-    model = "claude-sonnet-5",
+  client = ellmer::chat_openai(
+    model = "gpt-5.6-terra",
     params = ellmer::params(reasoning_effort = "medium")
   )
 )
