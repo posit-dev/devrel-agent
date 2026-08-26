@@ -30,15 +30,17 @@ details: >-
   project id with duplicated values — never aggregate across projects
   without the {{deduplicated}} filter. GitHub star history is missing
   entirely from this snapshot (see the `stars` glossary entry); star
-  questions cannot be answered. The current agent database includes a known
-  upstream month-end compaction defect: it is missing eight July RSS
-  total_items snapshots and nine July GitHub events (vip: 4, chatlas: 2,
-  shiny-issue-triage: 2, py-shiny-site: 1). Do not use July total_items for
-  RSS-feed growth, and describe July GitHub activity for those projects as
-  slightly undercounted. RSS content rows are unaffected.
+  questions cannot be answered. An upstream month-end compaction defect is
+  fixed in velocirepo, but the fix does not repair data that was already
+  compacted. The current agent database is missing eight July 2026 RSS
+  total_items snapshots and nine July 2026 GitHub events (vip: 4, chatlas:
+  2, shiny-issue-triage: 2, py-shiny-site: 1). Do not use July total_items
+  for RSS-feed growth, and describe July GitHub activity for those projects
+  as slightly undercounted. RSS content rows and later monthly compactions
+  are unaffected.
 
 version:
-  date: '2026-08-10'
+  date: '2026-08-26'
 
 tables:
   - name: metrics
