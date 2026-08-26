@@ -2,4 +2,6 @@ plans/
 data/
 .env
 evals/logs-backup/
+evals/logs/*.jsonl
 .shinychat/
+rsconnect/**/*.dcf

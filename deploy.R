@@ -1,7 +1,6 @@
 deploy_agent <- function(
-  app_name = "devrel-agent",
-  app_id = NULL,
-  server = "connect.posit.it",
+  app_id = "01a03ed8-65f0-408b-ccec-53789a51c2f2",
+  server = "connect.posit.cloud",
   env_vars = "OPENAI_API_KEY",
   dry_run = FALSE,
   log_level = c("normal", "verbose", "quiet")
@@ -46,7 +45,6 @@ deploy_agent <- function(
       appFiles = app_files,
       appPrimaryDoc = "app.R",
       appMode = "shiny",
-      appName = if (is.null(app_id)) app_name else NULL,
       appTitle = "DevRel Agent",
       appId = app_id,
       server = server,
@@ -67,7 +65,6 @@ agent_app_files <- function(root = normalizePath(".", mustWork = TRUE)) {
     "deploy.R",
     "instructions.md",
     "data/devrel.duckdb",
-    app_files_in_dir(root, "context", pattern = "[.]md$"),
     app_files_in_dir(root, "dictionaries", pattern = "[.]ya?ml$")
   )
   missing <- files[!file.exists(file.path(root, files))]
