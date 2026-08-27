@@ -13,7 +13,8 @@ welcome_message <- paste(
 
 ui <- bslib::page_fillable(
   title = "DevRel Agent",
-  commons::commons_ui(
+  theme = commons::commons_theme(),
+  shinychat::chat_ui(
     "chat",
     greeting = welcome_message
   )

@@ -9,7 +9,7 @@ Encoding: UTF-8
 Imports:
     bslib,
     cli,
-    commons (>= 0.0.0.9001),
+    commons (>= 0.0.0.9003),
     DBI,
     dplyr,
     duckdb,
@@ -21,6 +21,7 @@ Imports:
     promises,
     rlang,
     shiny,
+    shinychat,
     tibble,
     vitals,
     yaml
