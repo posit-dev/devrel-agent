@@ -1,0 +1,23 @@
+typography:
+  fonts:
+    - family: Open Sans
+      source: file
+      files:
+        - path: _fonts/OpenSans-Light.ttf
+          weight: 300
+        - path: _fonts/OpenSans-Regular.ttf
+          weight: 400
+        - path: _fonts/OpenSans-Italic.ttf
+          weight: 400
+          style: italic
+        - path: _fonts/OpenSans-Bold.ttf
+          weight: 700
+    - family: Source Code Pro
+      source: file
+      files:
+        - path: _fonts/SourceCodePro-Regular.ttf
+          weight: 400
+  base: Open Sans
+  headings:
+    weight: light
+  monospace: Source Code Pro

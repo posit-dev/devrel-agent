@@ -7,6 +7,7 @@ Description: A self-service data science agent for DevRel, built on commons.
 License: MIT
 Encoding: UTF-8
 Imports:
+    brand.yml,
     bslib,
     cli,
     commons (>= 0.0.0.9003),
@@ -26,5 +27,6 @@ Imports:
     vitals,
     yaml
 Remotes:
+    posit-dev/brand-yml/pkg-r@0ff09ac8b62c1d418fc8ff9393a2ed59d8f15caa,
     posit-dev/commons@main,
     tidyverse/vitals#218

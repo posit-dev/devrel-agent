@@ -62,11 +62,15 @@ deploy_agent <- function(
 
 agent_app_files <- function(root = normalizePath(".", mustWork = TRUE)) {
   files <- c(
+    "DESCRIPTION",
     "app.R",
     "agent.R",
     "agent-builder.R",
     "deploy.R",
     "instructions.md",
+    "_brand.yml",
+    "_assets/posit-logo-mark.svg",
+    app_files_in_dir(root, "_fonts"),
     "data/devrel.duckdb",
     app_files_in_dir(root, "dictionaries", pattern = "[.]ya?ml$")
   )
