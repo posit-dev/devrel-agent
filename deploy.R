@@ -1,5 +1,6 @@
 deploy_agent <- function(
-  app_id = "01a03ed8-65f0-408b-ccec-53789a51c2f2",
+  app_id = "01a043bd-5dee-7f82-917c-531eec503648",
+  account = "posit",
   server = "connect.posit.cloud",
   env_vars = "OPENAI_API_KEY",
   dry_run = FALSE,
@@ -45,8 +46,10 @@ deploy_agent <- function(
       appFiles = app_files,
       appPrimaryDoc = "app.R",
       appMode = "shiny",
+      appName = "devrel-agent",
       appTitle = "DevRel Agent",
       appId = app_id,
+      account = account,
       server = server,
       envVars = env_vars,
       dependencyResolution = "library",
