@@ -1,6 +1,8 @@
 # The devrel-io self-service agent: daily adoption and engagement metrics
 # for Posit's open source projects, materialized from the devrel-io repo by
 # etl/build-db.R.
+# Production runtime setup lives here. The agent definition is separate so the
+# app and evals exercise the same configuration.
 
 library(commons)
 
