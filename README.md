@@ -1,7 +1,20 @@
-# DevRel Agent
 
-A [commons agent](https://github.com/posit-dev/commons) for exploring the adoption, engagement, and growth of Posit open-source projects.
+<!-- README.md is generated from README.Rmd. Please edit that file -->
 
-It analyzes developer relations metrics collected by [DevRel I/O](https://github.com/posit-dev/devrel-io) from GitHub, PyPI, CRAN, Plausible, OpenVSX, YouTube, and RSS.
+# devrel agent
 
-This repo also includes an evaluation that tests whether the commons agent answers representative DevRel questions correctly. It compares the agent's accuracy to that of Claude Code working directly in the DevRel I/O repository.
+A [commons agent](https://github.com/posit-dev/commons) for exploring
+the adoption, engagement, and growth of Posit open-source projects.
+
+\[video demo\]
+
+The agent is more accurate, faster, and cheaper on devrel-related
+questions than Claude Code placed in the devrel-io repository.
+
+<img src="man/figures/README-eval-plot-1.png" alt="Three bar charts compare the devrel agent with Claude Code. The devrel agent has higher mean accuracy, lower median solver time, and fewer total output tokens." width="100%" />
+
+The agent analyzes the
+[devrel-io](https://github.com/posit-dev/devrel-io) data, which is an
+automated collection of devrel metrics. devrel-io is built with
+[posit-dev/velocirepo](https://github.com/posit-dev/velocirepo), a more
+general data synthesis software.

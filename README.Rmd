@@ -1,0 +1,91 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+
+library(ggplot2)
+```
+
+# devrel agent
+
+A [commons agent](https://github.com/posit-dev/commons) for exploring the adoption, engagement, and growth of Posit open-source projects.
+
+[video demo]
+
+```{r eval-data}
+#| include: false
+
+eval_questions <- 32
+eval_results <- data.frame(
+  system = factor(
+    c("Claude Code", "commons"),
+    levels = c("Claude Code", "commons")
+  ),
+  `Mean accuracy (%)` = c(83.5, 86.3),
+  `Median solver time (seconds)` = c(60.5, 31.0),
+  `Total output tokens` = c(439188, 243403),
+  row.names = c("Claude Code", "commons"),
+  check.names = FALSE
+)
+```
+
+The agent is more accurate, faster, and cheaper on devrel-related questions than Claude Code placed in the devrel-io repository.
+
+```{r eval-plot}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 4
+#| fig-alt: "Three bar charts compare the devrel agent with Claude Code. The devrel agent has higher mean accuracy, lower median solver time, and fewer total output tokens."
+metric_columns <- c(
+  "Mean accuracy (%)",
+  "Median solver time (seconds)",
+  "Total output tokens"
+)
+eval_plot <- stack(eval_results[metric_columns])
+names(eval_plot) <- c("value", "metric")
+eval_plot$system <- rep(
+  eval_results$system,
+  times = length(metric_columns)
+)
+accuracy <- eval_plot$metric == "Mean accuracy (%)"
+eval_plot$value[accuracy] <- eval_plot$value[accuracy] / 100
+
+eval_plot |>
+  ggplot(aes(x = system, y = value, fill = system)) +
+  geom_col(width = 0.7) +
+  facet_wrap(vars(metric), scales = "free_y") +
+  scale_fill_manual(
+    values = c("Claude Code" = "grey85", "commons" = "#438EB5"),
+    guide = "none"
+  ) +
+  scale_y_continuous(
+    labels = \(x) {
+      if (max(x, na.rm = TRUE) <= 1) {
+        paste0(x * 100, "%")
+      } else {
+        format(x, big.mark = ",", scientific = FALSE, trim = TRUE)
+      }
+    }
+  ) +
+  labs(
+    x = NULL,
+    y = NULL,
+    caption = paste(
+      eval_questions,
+      "questions across three epochs. Higher accuracy is better. Lower time and tokens are better."
+    ),
+    title = "The devrel agent was more accurate, faster, and used fewer tokens than Claude Code"
+  ) +
+  theme_minimal()
+```
+
+The agent analyzes the [devrel-io](https://github.com/posit-dev/devrel-io) data, which is an automated collection of devrel metrics. devrel-io is built with [posit-dev/velocirepo](https://github.com/posit-dev/velocirepo), a more general data synthesis software.
