@@ -19,7 +19,13 @@ library(ggplot2)
 
 A [commons agent](https://github.com/posit-dev/commons) for exploring the adoption, engagement, and growth of Posit open-source projects.
 
-[video demo]
+```{r}
+#| echo: false
+#| fig-alt: "A screencast of the devrel agent answering a question about CRAN downloads, then plotting downloads over time."
+knitr::include_graphics(
+  "https://github.com/user-attachments/assets/34449dea-3c57-4ecc-87ae-f68a219460fa"
+)
+```
 
 ```{r eval-data}
 #| include: false
