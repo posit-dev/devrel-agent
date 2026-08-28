@@ -31,7 +31,7 @@ eval_results <- eval_samples |>
   dplyr::summarise(
     `Mean accuracy (%)` = mean(score) * 100,
     `Median solver time (seconds)` = median(latency_sec),
-    `Total output tokens` = sum(output_tokens),
+    `Total cost (USD)` = sum(cost_usd),
     .groups = "drop"
   )
 eval_results$system <- factor(
@@ -46,11 +46,11 @@ The agent is more accurate, faster, and cheaper on devrel-related questions than
 #| echo: false
 #| fig-width: 10
 #| fig-height: 4
-#| fig-alt: "Three bar charts compare the devrel agent with Claude Code. The devrel agent has higher mean accuracy, lower median solver time, and fewer total output tokens."
+#| fig-alt: "Three bar charts compare the devrel agent with Claude Code. The devrel agent has higher mean accuracy, lower median solver time, and lower total cost."
 metric_columns <- c(
   "Mean accuracy (%)",
   "Median solver time (seconds)",
-  "Total output tokens"
+  "Total cost (USD)"
 )
 eval_plot <- stack(eval_results[metric_columns])
 names(eval_plot) <- c("value", "metric")
@@ -83,9 +83,9 @@ eval_plot |>
     y = NULL,
     caption = paste(
       eval_questions,
-      "questions across three epochs. Higher accuracy is better. Lower time and tokens are better."
+      "questions across three epochs. Higher accuracy is better. Lower time and cost are better."
     ),
-    title = "The devrel agent was more accurate, faster, and used fewer tokens than Claude Code"
+    title = "The devrel agent was more accurate, faster, and cheaper than Claude Code"
   ) +
   theme_minimal()
 ```

@@ -11,7 +11,7 @@ the adoption, engagement, and growth of Posit open-source projects.
 The agent is more accurate, faster, and cheaper on devrel-related
 questions than Claude Code placed in the devrel-io repository.
 
-<img src="man/figures/README-eval-plot-1.png" alt="Three bar charts compare the devrel agent with Claude Code. The devrel agent has higher mean accuracy, lower median solver time, and fewer total output tokens." width="100%" />
+<img src="man/figures/README-eval-plot-1.png" alt="Three bar charts compare the devrel agent with Claude Code. The devrel agent has higher mean accuracy, lower median solver time, and lower total cost." width="100%" />
 
 The agent analyzes the
 [devrel-io](https://github.com/posit-dev/devrel-io) data, which is an

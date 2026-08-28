@@ -27,5 +27,11 @@ results <- Map(function(file, system) {
 
 results$solver_chat <- NULL
 results$scorer_chat <- NULL
+sonnet5_price_per_mtok <- c(input = 2, cached_input = 0.2, output = 10)
+results$cost_usd <- (
+  results$input_tokens * sonnet5_price_per_mtok["input"] +
+    results$cached_input_tokens * sonnet5_price_per_mtok["cached_input"] +
+    results$output_tokens * sonnet5_price_per_mtok["output"]
+) / 1e6
 
 utils::write.csv(results, "evals/results.csv", row.names = FALSE, na = "")
