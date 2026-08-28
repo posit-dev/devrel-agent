@@ -18,6 +18,7 @@ build_devrel_agent <- function(con, client) {
         dictionary = "dictionaries/devrel.data-dict.yaml"
       )
     ),
-    instructions = "instructions.md"
+    instructions = "instructions.md",
+    network = "full"
   )
 }
