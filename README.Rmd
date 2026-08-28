@@ -9,8 +9,7 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "man/figures/README-",
-  out.width = "85%",
-  fig.align = "center"
+  out.width = "85%"
 )
 
 library(ggplot2)
@@ -20,12 +19,20 @@ library(ggplot2)
 
 A [commons agent](https://github.com/posit-dev/commons) for exploring the adoption, engagement, and growth of Posit open-source projects.
 
+```{=html}
+<div align="center">
+```
+
 ```{r}
 #| echo: false
 #| fig-alt: "A screencast of the devrel agent answering a question about CRAN downloads, then plotting downloads over time."
 knitr::include_graphics(
   "https://github.com/user-attachments/assets/34449dea-3c57-4ecc-87ae-f68a219460fa"
 )
+```
+
+```{=html}
+</div>
 ```
 
 ```{r eval-data}
@@ -48,6 +55,10 @@ eval_results$system <- factor(
 ```
 
 The agent is more accurate, faster, and cheaper on devrel-related questions than Claude Code placed in the devrel-io repository.
+
+```{=html}
+<div align="center">
+```
 
 ```{r eval-plot}
 #| echo: false
@@ -95,6 +106,10 @@ eval_plot |>
     title = "The devrel agent was more accurate, faster, and cheaper than Claude Code"
   ) +
   theme_minimal()
+```
+
+```{=html}
+</div>
 ```
 
 The agent analyzes the [devrel-io](https://github.com/posit-dev/devrel-io) data, which is an automated collection of devrel metrics. devrel-io is built with [posit-dev/velocirepo](https://github.com/posit-dev/velocirepo), a more general data synthesis software.
