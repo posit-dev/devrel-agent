@@ -8,16 +8,10 @@ library(commons)
 
 source("agent-builder.R")
 
+# Shared read-only connection. Shiny's event loop is single-threaded, so
+# sessions never query it concurrently; agents are built per session in app.R.
 devrel_con <- DBI::dbConnect(
   duckdb::duckdb(),
   "data/devrel.duckdb",
   read_only = TRUE
-)
-
-devrel_agent <- build_devrel_agent(
-  con = devrel_con,
-  client = ellmer::chat_openai(
-    model = "gpt-5.6-terra",
-    params = ellmer::params(reasoning_effort = "medium")
-  )
 )
