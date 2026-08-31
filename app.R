@@ -34,7 +34,18 @@ ui <- shinychat::page_chat(
 )
 
 server <- function(input, output, session) {
-  commons::commons_server("chat", devrel_agent)
+  # One agent per session: shinychat::chat_server() streams on the client
+  # directly, so a shared agent would interleave concurrent users' turns
+  # into a single conversation. Construction is ~90ms (local DuckDB table
+  # checks + dictionary parse), well within the session-startup budget.
+  agent <- build_devrel_agent(
+    con = devrel_con,
+    client = ellmer::chat_openai(
+      model = "gpt-5.6-terra",
+      params = ellmer::params(reasoning_effort = "medium")
+    )
+  )
+  commons::commons_server("chat", agent)
 }
 
 shinyApp(ui, server)
