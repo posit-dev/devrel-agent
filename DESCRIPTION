@@ -9,6 +9,7 @@ Encoding: UTF-8
 Imports:
     brand.yml,
     bslib,
+    bsicons,
     cli,
     commons (>= 0.0.0.9003),
     DBI,
@@ -16,6 +17,7 @@ Imports:
     duckdb,
     ellmer,
     glue,
+    htmltools,
     jsonlite,
     later,
     prettyunits,

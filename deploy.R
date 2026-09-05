@@ -1,106 +1,28 @@
-deploy_agent <- function(
-  app_id = "01a043bd-5dee-7f82-917c-531eec503648",
-  account = "posit",
-  server = "connect.posit.cloud",
-  env_vars = "OPENAI_API_KEY",
-  dry_run = FALSE,
-  log_level = c("normal", "verbose", "quiet")
-) {
-  log_level <- match.arg(log_level)
-  root <- normalizePath(".", mustWork = TRUE)
-  app_files <- agent_app_files(root)
+source("agent.R")
 
-  if (dry_run) {
-    cli::cli_h2("Dry run")
-    cli::cli_inform(c(
-      "i" = "App directory: {.path {root}}",
-      "i" = "App files: {length(app_files)}",
-      "i" = paste(
-        "Bundle contents:",
-        prettyunits::pretty_bytes(sum(file.size(file.path(root, app_files))))
-      )
-    ))
-    cli::cli_ul(app_files)
-    return(invisible(app_files))
-  }
+build_devrel_agent(
+  con = devrel_con,
+  client = ellmer::chat_openai(model = "gpt-5.6-terra")
+)$prewarm()
 
-  missing_env_vars <- env_vars[!nzchar(Sys.getenv(env_vars))]
-  if (length(missing_env_vars) > 0) {
-    cli::cli_abort(
-      "Environment variable{?s} {.envvar {missing_env_vars}} must be set."
-    )
-  }
-
-  if (!server %in% rsconnect::servers()$name) {
-    cli::cli_abort(c(
-      "rsconnect server {.val {server}} is not registered.",
-      "i" = "Register it with {.fn rsconnect::addServer} and {.fn rsconnect::connectApiUser}."
-    ))
-  }
-
-  source("agent.R", local = TRUE)
-  agent <- build_devrel_agent(
-    con = devrel_con,
-    client = ellmer::chat_openai(model = "gpt-5.6-terra")
-  )
-  agent$prewarm()
-  app_files <- agent_app_files(root)
-
-  # Positron sets this for local Python support, prompting an unnecessary scan.
-  withr::with_envvar(
-    c(RETICULATE_PYTHON = "", RETICULATE_PYTHON_FALLBACK = ""),
-    rsconnect::deployApp(
-      appDir = root,
-      appFiles = app_files,
-      appPrimaryDoc = "app.R",
-      appMode = "shiny",
-      appName = "devrel-agent",
-      appTitle = "DevRel Agent",
-      appId = app_id,
-      account = account,
-      server = server,
-      envVars = env_vars,
-      dependencyResolution = "library",
-      quarto = FALSE,
-      forceUpdate = TRUE,
-      logLevel = log_level
-    )
-  )
-}
-
-agent_app_files <- function(root = normalizePath(".", mustWork = TRUE)) {
-  files <- c(
+rsconnect::deployApp(
+  appPrimaryDoc = "app.R",
+  appFiles = c(
     "DESCRIPTION",
     "app.R",
     "agent.R",
     "agent-builder.R",
-    "deploy.R",
     "instructions.md",
     "_brand.yml",
-    "_assets/posit-logo-mark.svg",
-    app_files_in_dir(root, "_fonts"),
-    app_files_in_dir(root, "commons-cache"),
     "data/devrel.duckdb",
-    app_files_in_dir(root, "dictionaries", pattern = "[.]ya?ml$")
-  )
-  missing <- files[!file.exists(file.path(root, files))]
-  if (length(missing) > 0) {
-    cli::cli_abort("Missing deployment file{?s}: {.path {missing}}.")
-  }
-  files
-}
-
-app_files_in_dir <- function(root, directory, pattern = NULL) {
-  file.path(
-    directory,
     list.files(
-      file.path(root, directory),
-      pattern = pattern,
-      recursive = TRUE
+      c("_assets", "_fonts", "commons-cache", "dictionaries"),
+      recursive = TRUE,
+      full.names = TRUE
     )
-  )
-}
-
-requireNamespace("shinychat", quietly = TRUE)
-requireNamespace("bsicons", quietly = TRUE)
-requireNamespace("htmltools", quietly = TRUE)
+  ),
+  appId = "01a043bd-5dee-7f82-917c-531eec503648",
+  account = "posit",
+  server = "connect.posit.cloud",
+  envVars = "OPENAI_API_KEY"
+)
