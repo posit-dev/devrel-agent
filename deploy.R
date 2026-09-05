@@ -1,3 +1,5 @@
+withr::local_options(rsconnect.python.enabled = FALSE)
+
 source("agent.R")
 
 build_devrel_agent(
