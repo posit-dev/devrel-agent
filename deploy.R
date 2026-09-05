@@ -68,10 +68,11 @@ prewarm_agent_cache <- function(root) {
   withr::local_dir(root)
   sys.source("agent.R", envir = environment)
   withr::defer(DBI::dbDisconnect(environment$devrel_con, shutdown = TRUE))
-  environment$build_devrel_agent(
+  agent <- environment$build_devrel_agent(
     con = environment$devrel_con,
     client = ellmer::chat_openai()
   )
+  agent$prewarm()
   invisible(NULL)
 }
 
