@@ -38,6 +38,14 @@ deploy_agent <- function(
     ))
   }
 
+  source("agent.R", local = TRUE)
+  agent <- build_devrel_agent(
+    con = devrel_con,
+    client = ellmer::chat_openai(model = "gpt-5.6-terra")
+  )
+  agent$prewarm()
+  app_files <- agent_app_files(root)
+
   # Positron sets this for local Python support, prompting an unnecessary scan.
   withr::with_envvar(
     c(RETICULATE_PYTHON = "", RETICULATE_PYTHON_FALLBACK = ""),
@@ -71,6 +79,7 @@ agent_app_files <- function(root = normalizePath(".", mustWork = TRUE)) {
     "_brand.yml",
     "_assets/posit-logo-mark.svg",
     app_files_in_dir(root, "_fonts"),
+    app_files_in_dir(root, "commons-cache"),
     "data/devrel.duckdb",
     app_files_in_dir(root, "dictionaries", pattern = "[.]ya?ml$")
   )
