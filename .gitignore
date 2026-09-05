@@ -4,4 +4,5 @@ data/
 evals/logs-backup/
 evals/logs/*.jsonl
 .shinychat/
+commons-cache/
 rsconnect/**/*.dcf

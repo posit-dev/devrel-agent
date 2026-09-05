@@ -38,6 +38,9 @@ deploy_agent <- function(
     ))
   }
 
+  prewarm_agent_cache(root)
+  app_files <- agent_app_files(root)
+
   # Positron sets this for local Python support, prompting an unnecessary scan.
   withr::with_envvar(
     c(RETICULATE_PYTHON = "", RETICULATE_PYTHON_FALLBACK = ""),
@@ -60,6 +63,18 @@ deploy_agent <- function(
   )
 }
 
+prewarm_agent_cache <- function(root) {
+  environment <- new.env(parent = globalenv())
+  withr::local_dir(root)
+  sys.source("agent.R", envir = environment)
+  withr::defer(DBI::dbDisconnect(environment$devrel_con, shutdown = TRUE))
+  environment$build_devrel_agent(
+    con = environment$devrel_con,
+    client = ellmer::chat_openai()
+  )
+  invisible(NULL)
+}
+
 agent_app_files <- function(root = normalizePath(".", mustWork = TRUE)) {
   files <- c(
     "DESCRIPTION",
@@ -71,6 +86,7 @@ agent_app_files <- function(root = normalizePath(".", mustWork = TRUE)) {
     "_brand.yml",
     "_assets/posit-logo-mark.svg",
     app_files_in_dir(root, "_fonts"),
+    app_files_in_dir(root, "commons-cache"),
     "data/devrel.duckdb",
     app_files_in_dir(root, "dictionaries", pattern = "[.]ya?ml$")
   )
