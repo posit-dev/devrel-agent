@@ -8,7 +8,7 @@ library(commons)
 
 options(commons.context_cache = "commons-cache")
 
-source("agent-builder.R")
+source("agent-builder.R", local = TRUE)
 
 # Shared read-only connection. Shiny's event loop is single-threaded, so
 # sessions never query it concurrently; agents are built per session in app.R.

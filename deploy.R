@@ -38,7 +38,14 @@ deploy_agent <- function(
     ))
   }
 
-  prewarm_agent_cache(root)
+  withr::local_dir(root)
+  source("agent.R", local = TRUE)
+  withr::defer(DBI::dbDisconnect(devrel_con, shutdown = TRUE))
+  agent <- build_devrel_agent(
+    con = devrel_con,
+    client = ellmer::chat_openai()
+  )
+  agent$prewarm()
   app_files <- agent_app_files(root)
 
   # Positron sets this for local Python support, prompting an unnecessary scan.
@@ -61,19 +68,6 @@ deploy_agent <- function(
       logLevel = log_level
     )
   )
-}
-
-prewarm_agent_cache <- function(root) {
-  environment <- new.env(parent = globalenv())
-  withr::local_dir(root)
-  sys.source("agent.R", envir = environment)
-  withr::defer(DBI::dbDisconnect(environment$devrel_con, shutdown = TRUE))
-  agent <- environment$build_devrel_agent(
-    con = environment$devrel_con,
-    client = ellmer::chat_openai()
-  )
-  agent$prewarm()
-  invisible(NULL)
 }
 
 agent_app_files <- function(root = normalizePath(".", mustWork = TRUE)) {
