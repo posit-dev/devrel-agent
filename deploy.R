@@ -40,7 +40,6 @@ deploy_agent <- function(
 
   withr::local_dir(root)
   source("agent.R", local = TRUE)
-  withr::defer(DBI::dbDisconnect(devrel_con, shutdown = TRUE))
   agent <- build_devrel_agent(
     con = devrel_con,
     client = ellmer::chat_openai()
