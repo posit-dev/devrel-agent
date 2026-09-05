@@ -38,7 +38,6 @@ deploy_agent <- function(
     ))
   }
 
-  withr::local_dir(root)
   source("agent.R", local = TRUE)
   agent <- build_devrel_agent(
     con = devrel_con,
