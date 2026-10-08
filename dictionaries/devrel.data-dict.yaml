@@ -40,7 +40,7 @@ details: >-
   are unaffected.
 
 version:
-  date: '2026-08-26'
+  date: '2026-10-08'
 
 tables:
   - name: metrics
@@ -54,7 +54,7 @@ tables:
       packages), PyPI daily downloads since 2025-06 (8 packages), Plausible
       website analytics since 2021-12 (16 sites), OpenVSX totals since
       2026-01 (6 extensions), YouTube totals since 2026-06-25 (one channel,
-      1,518 videos), GitHub daily event counts since 2009 (~350 repos),
+      1,558 videos), GitHub daily event counts since 2009 (~350 repos),
       GitHub total_reactions per issue/PR since 2026-07-27, and RSS
       total_items for the five opensource.posit.co feeds since 2026-07-27.
 
@@ -89,11 +89,14 @@ tables:
       GitHub event series were refetched over their full history on
       2026-07-28 and now run continuously: issue and PR comments are one
       `daily_comments` series through yesterday, and issue-close counts no
-      longer undercount after mid-2026. The CRAN series is missing ~7
-      scattered days over the last two years (days where cranlogs hadn't
-      yet published when the daily fetch ran; they are never backfilled),
-      so range sums slightly undercount and can differ from cranlogs' own
-      current totals.
+      longer undercount after mid-2026. The CRAN series is missing 20 days
+      since 2012, never backfilled, so range sums slightly undercount and
+      can differ from cranlogs' own current totals. Since July 2026 that
+      includes the last day of every month (2026-07-31, 2026-08-31,
+      2026-09-30, and likely each month-end after): an upstream defect skips
+      it, so monthly CRAN totals are short one day. Say so when reporting a
+      monthly CRAN total, and compare months by daily average rather than
+      sum.
 
       total_reactions is per issue/PR, not per project: one row per
       (project, target, ref) carrying that issue's or PR's reaction count,
@@ -249,8 +252,8 @@ tables:
         description: >-
           CRAN package downloads, deduplicated. Includes automated traffic
           (mirrors, CI, caching); indicates scale and trend, not user counts.
-          The series is missing ~13 scattered days, so range sums slightly
-          undercount. Do not combine with pypi_downloads: the registries have
+          The series is missing 20 days, including each month-end since
+          2026-07-31, so range sums slightly undercount. Do not combine with pypi_downloads: the registries have
           different counting semantics.
         expr: >-
           SUM(CASE WHEN source = 'cran'
@@ -492,7 +495,7 @@ tables:
     details: >-
       466 projects are listed, but only ~20 curated ones have package/site
       metrics; the rest are GitHub-only repos across the posit-dev, rstudio,
-      tidyverse, and quarto-dev orgs (68 have no metrics at all yet). Which
+      tidyverse, and quarto-dev orgs (66 have no metrics at all yet). Which
       sources cover a project is best read from the data, e.g.
       SELECT DISTINCT source FROM metrics WHERE project = 'ellmer'.
 
@@ -519,10 +522,10 @@ tables:
       posts, resources, software entries, people, and events. One row per
       item, with title, body text, author, state, timestamps, and URL.
     details: >-
-      Row counts by type: 51,175 GitHub issues and 42,162 PRs (from 2009,
-      across ~350 repos, both open and closed), 462 GitHub repos, 1,711 site
-      resources, 1,518 YouTube videos, 990 blog posts (from 2012), 368
-      software entries, 173 people, 31 events. The `type` column is the way
+      Row counts by type: 52,063 GitHub issues and 44,263 PRs (from 2009,
+      across ~350 repos, both open and closed), 462 GitHub repos, 1,746 site
+      resources, 1,558 YouTube videos, 1,019 blog posts (from 2012), 384
+      software entries, 187 people, 40 events. The `type` column is the way
       in; `source` (github, youtube, rss) is coarser.
 
       `description` and `content` hold full body text — issue and PR bodies,
@@ -590,7 +593,8 @@ tables:
         type: string
         description: >-
           Full body text, populated for site posts, resources, software, and
-          events only. Long text.
+          events only. Long text. Plain text with HTML stripped; HTML tables
+          are dropped entirely, so their contents are not searchable.
       - name: author
         type: string
         description: >-
