@@ -30,5 +30,4 @@ Imports:
     yaml
 Remotes:
     posit-dev/brand-yml/pkg-r@0ff09ac8b62c1d418fc8ff9393a2ed59d8f15caa,
-    posit-dev/commons@main,
-    tidyverse/vitals#218
+    posit-dev/commons/pkg-r
