@@ -8,6 +8,7 @@ build_devrel_agent <- function(con, client) {
         con,
         tables = c(
           "projects",
+          "targets",
           "metrics",
           "metrics_filled",
           "indicators",
@@ -15,7 +16,7 @@ build_devrel_agent <- function(con, client) {
           "content",
           "meta"
         ),
-        dictionary = "dictionaries/devrel.data-dict.yaml"
+        dictionary = "data/data-dict.yaml"
       )
     ),
     instructions = "instructions.md",

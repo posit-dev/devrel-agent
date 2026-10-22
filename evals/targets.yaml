@@ -1,102 +1,103 @@
-snapshot_date: '2026-07-28'
-q01_june_2026: '1,804,733'
+snapshot_date: '2026-10-21'
+q01_june_2026: '1,865,533'
 q01_june_2025: '1,355,051'
 q02_monthly: '2024-07: 1,297,169; 2024-08: 1,286,280; 2024-09: 1,541,718; 2024-10:
   1,867,897; 2024-11: 1,738,067; 2024-12: 1,402,758; 2025-01: 1,442,195; 2025-02:
   1,528,318; 2025-03: 1,721,774; 2025-04: 1,764,018; 2025-05: 1,618,991; 2025-06:
   1,355,051; 2025-07: 1,297,657; 2025-08: 1,450,092; 2025-09: 1,731,842; 2025-10:
-  1,966,350; 2025-11: 1,935,606; 2025-12: 1,691,702; 2026-01: 1,643,784; 2026-02:
-  1,581,067; 2026-03: 1,901,357; 2026-04: 2,031,789; 2026-05: 1,841,998; 2026-06:
-  1,804,733'
+  1,966,350; 2025-11: 1,935,606; 2025-12: 1,691,702; 2026-01: 1,681,412; 2026-02:
+  1,615,272; 2026-03: 1,975,119; 2026-04: 2,109,778; 2026-05: 1,880,580; 2026-06:
+  1,865,533'
 q02_yearly: '2014: 142,957; 2015: 798,594; 2016: 1,673,594; 2017: 3,691,068; 2018:
   5,615,992; 2019: 10,891,407; 2020: 15,498,015; 2021: 19,193,301; 2022: 22,386,865;
-  2023: 19,740,937; 2024: 18,138,349; 2025: 19,503,596; 2026: 12,292,062'
-q03_ytd_visitor_days: '203,809'
-q03_double_count: '405,211'
-q04_forks_ytd: 'ggplot2: 47; cheatsheets: 46; skills: 35; shiny-r: 25; dplyr: 24'
-q05_channel_views: '4,105,677'
-q05_channel_asof: '2026-07-28'
-q05_per_video_sum: '4,107,054'
-q06_pages_calendar_month: '/: 15,217; /r/getstarted/shiny-basics/lesson1/: 13,187;
-  /r/gallery/: 8,965; /py/: 4,822; /r/components/: 2,329'
+  2023: 19,740,937; 2024: 18,138,349; 2025: 19,503,596; 2026: 17,360,410'
+q03_ytd_visitor_days: '280,484'
+q03_double_count: '560,126'
+q04_forks_ytd: 'quarto: 96; rstudio: 82; positron: 67; ggplot2: 61; cheatsheets: 61'
+q05_channel_views: '4,299,806'
+q05_channel_asof: '2026-10-21'
+q05_per_video_sum: '4,300,519'
+q06_pages_calendar_month: '/: 15,359; /r/getstarted/shiny-basics/lesson1/: 13,119;
+  /r/gallery/: 8,435; /py/: 4,711; /r/components/: 2,384'
 q06_pages_trailing_month: '/: 12,064; /r/getstarted/shiny-basics/lesson1/: 10,552;
   /r/gallery/: 7,213; /py/: 4,436; /r/components/: 2,059'
-q07_top_video: '"Machine Learning with R and TensorFlow" with 99,647 views'
-q07_runner_up: '"Get started with Quarto | Mine Çetinkaya-Rundel" with 85,260 views'
-q08_cran_june: '6,910,111'
-q08_pypi_june: '3,713,089'
-q09_cran: 'CRAN (orbital-r): series starts 2024-07-01, 8,231 total, 6,280 since 2025-02-25,
-  3,116 in 2026 YTD'
+q07_top_video: '"Machine Learning with R and TensorFlow" with 99,751 views'
+q07_runner_up: '"What Is Quarto? Get Started with Documents, Slides and Websites in
+  RStudio" with 91,638 views'
+q08_cran_june: '7,111,319'
+q08_pypi_june: '3,861,882'
+q09_cran: 'CRAN (orbital-r): series starts 2024-07-01, 9,920 total, 7,969 since 2025-02-25,
+  4,805 in 2026 YTD'
 q09_pypi: 'PyPI (orbital-python): series starts 2025-07-12 (collection began 2025-06),
-  28,960 total, 23,222 in 2026 YTD'
-q09_github: 'github activity events all-time (issues, PRs, comments, forks): 267 deduplicated
-  vs 801 summed naively across the three orbital ids'
+  41,838 total, 36,100 in 2026 YTD'
+q09_github: 'github activity events all-time (issues, PRs, comments, forks): 484 deduplicated
+  vs 1,452 summed naively across the three orbital ids'
 q09_star_snapshot: The open-source software catalog records 117 stars for posit-dev/orbital,
   updated 2026-05-20; this is a dated snapshot, not star history
-q10_june25_pageviews: '6,800'
+q10_june25_pageviews: '5,922'
 q11_downloads_matched: 'downloads since 2025-06-04 (PyPI collection start): shiny
-  (CRAN) 8,569,174 vs shiny for python (PyPI) 3,476,680'
-q11_activity_yearly: '2023: rstudio/shiny 887 vs py-shiny 1,666; 2024: rstudio/shiny
-  848 vs py-shiny 2,430; 2025: rstudio/shiny 718 vs py-shiny 1,114; 2026: rstudio/shiny
-  324 vs py-shiny 614'
-q12_hadley_events: 'ellmer: 1,663; ggsql: 39; mcptools: 5; vitals: 5; querychat: 1;
+  (CRAN) 11,163,499 vs shiny for python (PyPI) 4,269,100'
+q11_activity_yearly: '2023: rstudio/shiny 1,211 vs py-shiny 2,167; 2024: rstudio/shiny
+  1,116 vs py-shiny 2,975; 2025: rstudio/shiny 941 vs py-shiny 1,446; 2026: rstudio/shiny
+  561 vs py-shiny 1,233'
+q12_hadley_events: 'ellmer: 1,695; ggsql: 39; mcptools: 5; vitals: 5; querychat: 2;
   shinychat: 1'
-q12_ellmer_cran: '175,928'
-q12_ggsql_activity: 'daily_comments: 469; daily_prs_opened: 264; daily_prs_merged:
-  240; daily_issues_opened: 206; daily_issues_closed: 157; daily_forks: 23'
-q13_joint_pr: ellmer (hadley 541 / joe 29); shiny-r (hadley 83 / joe 417); shiny (hadley
+q12_ellmer_cran: '213,913'
+q12_ggsql_activity: 'daily_stars: 552; daily_comments: 526; daily_prs_opened: 310;
+  daily_prs_merged: 274; daily_issues_opened: 251; daily_issues_closed: 172; daily_forks:
+  29'
+q13_joint_pr: ellmer (hadley 542 / joe 29); shiny-r (hadley 83 / joe 417); shiny (hadley
   83 / joe 417); rsconnect (hadley 274 / joe 6); dplyr (hadley 248 / joe 2); leaflet
-  (hadley 6 / joe 112); pins-r (hadley 85 / joe 2); pool (hadley 66 / joe 5)
-q14_dplyr_june: '1,804,733'
-q14_docs_visitors_june: '42,242'
-q15_contributors: 'wch: 3,909; jcheng5: 2,687; cpsievert: 2,109; schloerke: 1,760;
-  gadenbuie: 950; yihui: 686'
+  (hadley 6 / joe 112); pins-r (hadley 85 / joe 2); pool (hadley 68 / joe 5)
+q14_dplyr_june: '1,865,533'
+q14_docs_visitors_june: '43,987'
+q15_contributors: 'wch: 3,909; jcheng5: 2,688; cpsievert: 2,129; schloerke: 2,037;
+  gadenbuie: 964; yihui: 686'
 q16_visitors_first: '11,265'
-q16_visitors_last: '41,294'
-q17_latest_cran_date: '2026-07-27'
-q17_latest_cran_downloads: '230,111'
-q18_pairs_ytd: chatlas 371,070 PyPI vs ellmer 93,204 CRAN; great-tables 3,387,378
-  PyPI vs gt 972,135 CRAN; pointblank-python 261,647 PyPI vs pointblank-r 33,999 CRAN;
-  orbital-python 23,222 PyPI vs orbital-r 3,116 CRAN; querychat 24,322 PyPI vs querychat
-  3,104 CRAN
-q18_shiny_matched: shiny (CRAN) 8,569,174 vs shiny for python (PyPI) 3,476,680 since
+q16_visitors_last: '42,864'
+q17_latest_cran_date: '2026-10-20'
+q17_latest_cran_downloads: '214,087'
+q18_pairs_ytd: chatlas 603,403 PyPI vs ellmer 131,189 CRAN; great-tables 5,126,971
+  PyPI vs gt 1,348,291 CRAN; pointblank-python 334,512 PyPI vs pointblank-r 40,150
+  CRAN; orbital-python 36,100 PyPI vs orbital-r 4,805 CRAN; querychat 35,933 PyPI
+  vs querychat 4,728 CRAN
+q18_shiny_matched: shiny (CRAN) 11,163,499 vs shiny for python (PyPI) 4,269,100 since
   2025-06-04
-q18_matched_totals: 'across all six pairs since 2025-06-04: CRAN 11,252,276 vs PyPI
-  9,980,794'
+q18_matched_totals: 'across all six pairs since 2025-06-04: CRAN 14,270,206 vs PyPI
+  12,842,494'
 q19_tags: 21 of 466 projects have language tags; only 6 are tagged python
 q19_pypi_roster: chatlas, great-tables, orbital-python, plotnine, pointblank-python,
   querychat, raghilda, shiny-python
-q20_positron_sources: plausible
+q20_positron_sources: github, plausible
 q21_may_videos: 18 videos were published in May 2026; their current cumulative lifetime
-  views total 28,432
+  views total 30,689
 q24_tidyverse_repos: '5 tidyverse-org repos are tracked: tidyverse/dplyr, tidyverse/ellmer,
   tidyverse/ggplot2, tidyverse/tidyverse, tidyverse/vitals'
-q24_response_time: 'issues opened in tidyverse repos since 2025-07-01: 573 issues,
-  440 got a comment, median 3.5 hours to first comment (p75 46 hours)'
+q24_response_time: 'issues opened in tidyverse repos since 2025-07-01: 653 issues,
+  484 got a comment, median 5 hours to first comment (p75 63.3 hours)'
 q26_workflows_target: posit-dev/Workflows
 q27_video_growth: "Mind-Blowing Quarto Slide Extensions \U0001F4AC \U0001F58D️ \U0001F92F
-  | Emil Hvitfeldt | Data Science Lab: 2,926; How do you pronounce \"dplyr\"?: 2,350;
-  Python libraries for the Polars-pilled: 1,922; WORK OUT LOUD. It's nerve-wracking,
-  but worth it \U0001F624: 1,135; Shiny is... *too* easy? \U0001F605 Uh oh \U0001FAE3:
-  1,077"
+  | Emil Hvitfeldt | Data Science Lab: 3,141; How do you pronounce \"dplyr\"?: 2,437;
+  Python libraries for the Polars-pilled: 2,030; Difference between Numpy and Polars:
+  1,893; WORK OUT LOUD. It's nerve-wracking, but worth it \U0001F624: 1,163"
 q28_openvsx_ratings: 'posit/air-vscode: 5.00, 3 reviews (as of 2026-07-09); posit/shiny:
   5.00, 2 reviews (as of 2026-07-09); quarto/quarto: 5.00, 2 reviews (as of 2026-07-09);
   posit/publisher: no rating, 0 reviews (as of 2026-07-09); posit/shinyuieditor: no
   rating, 0 reviews (as of 2026-07-09)'
-q29_issue_replay: 'retained events through June 30: naive opens 50,815 minus closes
-  39,505 = 11,310; after project-id deduplication, opens 46,778 minus closes 36,747
-  = 10,031 by row-count balance, or 10,035 distinct opened refs have no retained close
+q29_issue_replay: 'retained events through June 30: naive opens 74,573 minus closes
+  58,415 = 16,158; after project-id deduplication, opens 70,536 minus closes 55,657
+  = 14,879 by row-count balance, or 14,883 distinct opened refs have no retained close
   because four close-only refs exist'
-q29_shiny_replay: deduplicated Shiny event replay gives 809 open issues, while current
-  content has 793
-q30_stale_issues: 'rstudio/shiny: 752; rstudio/reticulate: 439; posit-dev/py-shiny:
-  370; rstudio/leaflet: 295; rstudio/gt: 256'
-q31_visitor_days: '2026-06: 364,680 visitor-days over 30 days; 2026-07: 261,187 visitor-days
-  over 28 days'
-q31_youtube_subscribers: YouTube subscribers rose from 47,500 on 2026-07-01 to 47,700
-  on 2026-07-26
-q32_tidyverse_july: 782,695 CRAN downloads for the tidyverse meta-package from 2026-07-01
-  through 2026-07-27 (27 observed days)
+q29_shiny_replay: deduplicated Shiny event replay gives 811 open issues, while current
+  content has 795
+q30_stale_issues: 'quarto-dev/quarto-cli: 1,260; rstudio/rstudio: 1,064; rstudio/shiny:
+  749; posit-dev/positron: 649; rstudio/reticulate: 437'
+q31_visitor_days: '2026-06: 375,478 visitor-days over 30 days; 2026-07: 291,857 visitor-days
+  over 31 days'
+q31_youtube_subscribers: YouTube subscribers rose from 47,500 on 2026-07-01 to 48,200
+  on 2026-10-05
+q32_tidyverse_july: 908,418 CRAN downloads for the tidyverse meta-package from 2026-07-01
+  through 2026-07-31 (31 observed days)
 q33_cran_missing_dates: 2025-08-25, 2025-08-26, 2025-08-29, 2025-08-30, 2025-08-31,
   2025-09-01, 2025-09-02
 q33_cran_observed: '2025-08-20: 181,636; 2025-08-21: 169,246; 2025-08-22: 176,885;
