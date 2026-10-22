@@ -1,0 +1,76 @@
+name: Deploy
+
+# Exports devrel-io's latest data with its data dictionary and deploys the
+# agent to Connect Cloud. Pull requests check everything but the deploy.
+
+on:
+  schedule:
+    # Two and a half hours after devrel-io's nightly fetch (09:30 UTC).
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+    inputs:
+      devrel-io-ref:
+        description: The devrel-io commit, branch or tag to export
+        default: main
+      deploy:
+        description: Deploy to Connect Cloud (otherwise only export and check)
+        type: boolean
+        default: true
+  pull_request:
+
+concurrency:
+  group: deploy-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      # The latest commit only (no history), and only what velocirepo reads.
+      - uses: actions/checkout@v5
+        with:
+          repository: posit-dev/devrel-io
+          ref: ${{ inputs.devrel-io-ref || 'main' }}
+          path: inst/devrel-io
+          sparse-checkout: |
+            velocirepo.toml
+            velocirepo/data
+          sparse-checkout-cone-mode: false
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Install velocirepo and data-dict
+        run: |
+          uv tool install velocirepo==1.2.0
+          uv tool install data-dict-yaml==0.0.3
+
+      - name: Export the data and its dictionary
+        run: velocirepo --config inst/devrel-io/velocirepo.toml export data --data-dict
+
+      # Errors stop the deploy; warnings, such as a todo for a new shared
+      # target, are shown but don't.
+      - name: Validate the dictionary
+        run: |
+          data-dict validate-spec data || true
+          data-dict validate-spec data --json | jq -e '.status != "error"'
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rsconnect, any::withr
+
+      - name: Deploy
+        env:
+          DEVREL_DEPLOY: ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.deploy)) && 'true' || 'false' }}
+          CONNECT_CLOUD_CLIENT_ID: ${{ secrets.CONNECT_CLOUD_CLIENT_ID }}
+          CONNECT_CLOUD_CLIENT_SECRET: ${{ secrets.CONNECT_CLOUD_CLIENT_SECRET }}
+        run: Rscript deploy.R
