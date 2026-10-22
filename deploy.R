@@ -32,7 +32,7 @@ if (nzchar(Sys.getenv("CONNECT_CLOUD_CLIENT_ID"))) {
   rsconnect::connectCloudClientCredentials(
     clientId = Sys.getenv("CONNECT_CLOUD_CLIENT_ID"),
     clientSecret = Sys.getenv("CONNECT_CLOUD_CLIENT_SECRET"),
-    account = "posit"
+    accountName = "posit"
   )
 }
 
