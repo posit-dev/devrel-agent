@@ -1,6 +1,6 @@
 # Computes the machine-derived grading facts for evals/questions.yaml, which
 # references them as {placeholders}. Targets are snapshot-scoped: they are
-# correct for the data/devrel.duckdb the solver queries.
+# correct for the data/velocirepo.duckdb the solver queries.
 #
 # Usage:
 #   Rscript evals/targets.R author   # (re)write evals/targets.yaml
@@ -180,7 +180,7 @@ compute_targets <- function(con) {
 
   hadley_candidates <- q(
     "SELECT project, COUNT(*) AS n FROM events
-     WHERE username = 'hadley'
+     WHERE user = 'hadley'
        AND project IN ('ellmer', 'ggsql', 'btw', 'mcptools', 'vitals', 'shinychat', 'querychat')
      GROUP BY project ORDER BY n DESC, project"
   )
@@ -197,10 +197,10 @@ compute_targets <- function(con) {
 
   joint_pr <- q(
     "SELECT project,
-            COUNT(*) FILTER (WHERE username = 'hadley') AS hadley,
-            COUNT(*) FILTER (WHERE username = 'jcheng5') AS joe
+            COUNT(*) FILTER (WHERE user = 'hadley') AS hadley,
+            COUNT(*) FILTER (WHERE user = 'jcheng5') AS joe
      FROM events
-     WHERE type IN ('pr_open', 'pr_merge') AND username IN ('hadley', 'jcheng5')
+     WHERE type IN ('pr_open', 'pr_merge') AND user IN ('hadley', 'jcheng5')
      GROUP BY project
      HAVING hadley > 0 AND joe > 0
      ORDER BY hadley + joe DESC, project DESC LIMIT 8"
@@ -213,10 +213,10 @@ compute_targets <- function(con) {
   )
 
   contributors <- q(sprintf(
-    "SELECT username, COUNT(*) AS n FROM events
+    "SELECT user, COUNT(*) AS n FROM events
      WHERE project IN ('shiny', 'shiny-r', 'shiny-python', 'py-shiny')
        AND type <> 'fork' AND %s
-     GROUP BY username ORDER BY n DESC LIMIT 6",
+     GROUP BY user ORDER BY n DESC LIMIT 6",
     dedup_where
   ))
 
@@ -509,7 +509,7 @@ compute_targets <- function(con) {
     ),
     q14_dplyr_june = fmt(dplyr_month("2026-06-01", "2026-06-30")),
     q14_docs_visitors_june = fmt(dplyr_docs),
-    q15_contributors = fmt_rows(contributors, "username", "n"),
+    q15_contributors = fmt_rows(contributors, "user", "n"),
     q16_visitors_first = fmt(positron_visitors("2024-12-01", "2024-12-31")),
     q16_visitors_last = fmt(positron_visitors("2026-06-01", "2026-06-30")),
     q17_latest_cran_date = as.character(latest_cran$date),
@@ -598,7 +598,7 @@ compute_targets <- function(con) {
 
 main <- function(mode = c("author", "audit")) {
   mode <- match.arg(mode)
-  con <- DBI::dbConnect(duckdb::duckdb(), "data/devrel.duckdb", read_only = TRUE)
+  con <- DBI::dbConnect(duckdb::duckdb(), "data/velocirepo.duckdb", read_only = TRUE)
   on.exit(DBI::dbDisconnect(con, shutdown = TRUE))
 
   computed <- compute_targets(con)

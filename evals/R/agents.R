@@ -4,7 +4,7 @@
 
 source("agent-builder.R")
 
-make_devrel_con <- function(db_path = "data/devrel.duckdb") {
+make_devrel_con <- function(db_path = "data/velocirepo.duckdb") {
   DBI::dbConnect(duckdb::duckdb(), db_path, read_only = TRUE)
 }
 

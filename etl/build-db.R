@@ -1,235 +1,69 @@
-# Materialize the devrel-io velocirepo data into a compact, standalone DuckDB.
+# Export the devrel-io velocirepo data as a standalone DuckDB with its data
+# dictionary.
 #
-# The source velocirepo.duckdb ships views whose read_json() calls hardcode
-# absolute paths from the machine that built it, and querying them re-parses
-# the JSONL every time. This script extracts those view definitions, rewrites
-# the path prefix to `data_dir`, and materializes each view as a plain table
-# in `output`, so agent queries pay no JSONL parsing and the artifact is
-# portable. The view SQL is always taken from the source database, never
-# copied here, so velocirepo's semantics are tracked automatically.
+# velocirepo (>= 1.2.0) writes both: `velocirepo export --format duckdb`
+# materializes every table as plain data (no views, no JSON-typed columns, so
+# the artifact is portable and readable without DuckDB's json extension), and
+# `--data-dict` writes data-dict.yaml from the schema, the source metadata, the
+# data and the [data_dict] section of devrel-io's velocirepo.toml. Caveats
+# about devrel-io's data belong in that section, not here.
 #
 # Usage:
-#   Rscript etl/build-db.R [data_dir] [output]
+#   Rscript etl/build-db.R [devrel_io] [output_dir]
 
 build_devrel_db <- function(
-  data_dir = "inst/devrel-io/velocirepo/data",
-  output = "data/devrel.duckdb"
+  devrel_io = "inst/devrel-io",
+  output_dir = "data"
 ) {
-  source_db <- file.path(data_dir, "velocirepo.duckdb")
-  if (!file.exists(source_db)) {
-    cli::cli_abort("No velocirepo database found at {.path {source_db}}.")
+  config <- file.path(devrel_io, "velocirepo.toml")
+  if (!file.exists(config)) {
+    cli::cli_abort("No velocirepo config found at {.path {config}}.")
+  }
+  if (Sys.which("velocirepo") == "") {
+    cli::cli_abort("velocirepo isn't installed; see https://posit-dev.github.io/velocirepo/user-guide/installation.html.")
   }
 
-  views <- read_view_definitions(source_db)
-  views$sql <- rewrite_data_paths(views$sql, normalizePath(data_dir))
-
-  unlink(c(output, paste0(output, ".wal")))
-  dir.create(dirname(output), showWarnings = FALSE, recursive = TRUE)
-
-  con <- DBI::dbConnect(duckdb::duckdb())
-  on.exit(DBI::dbDisconnect(con))
-  load_json_extension(con)
-  DBI::dbExecute(con, sprintf("ATTACH '%s' AS src (READ_ONLY)", source_db))
-  DBI::dbExecute(con, sprintf("ATTACH '%s' AS out", output))
-
-  for (sql in views$sql) {
-    DBI::dbExecute(con, sql)
-  }
-
-  DBI::dbExecute(con, "CREATE TABLE out.projects AS SELECT * FROM src.projects")
-
-  # Materialize in dependency order, staging each view's rows in the
-  # connection's in-memory database and repointing the view at the staged
-  # table as we go, so every JSONL glob is parsed exactly once: `metrics`
-  # unions over `events`, and `metrics_filled`/`indicators` build on
-  # `metrics`. `__velocirepo_metric_watermarks` is left as a view; it's tiny
-  # and only consulted while materializing `metrics_filled`. The staged
-  # copies keep velocirepo's shape (downstream views need the extra grain);
-  # only what lands in `out` applies the extra extraction, which also keeps
-  # the artifact compact (transforming `out` tables in place would leave
-  # the originals' blocks in the file).
-  for (name in c("events", "metrics", "content", "metrics_filled", "indicators")) {
-    DBI::dbExecute(
-      con,
-      sprintf("CREATE TABLE staged_%s AS SELECT * FROM %s", name, name)
+  status <- system2(
+    "velocirepo",
+    c(
+      "--config", shQuote(config),
+      "export", shQuote(output_dir),
+      "--format", "duckdb",
+      "--data-dict"
     )
-    DBI::dbExecute(
-      con,
-      sprintf("CREATE OR REPLACE VIEW %s AS SELECT * FROM staged_%s", name, name)
-    )
-    DBI::dbExecute(
-      con,
-      sprintf("CREATE TABLE out.%s AS %s", name, materialize_select(name))
-    )
-  }
-
-  DBI::dbExecute(
-    con,
-    "CREATE TABLE out.meta AS
-     SELECT (SELECT MAX(date) FROM out.metrics) AS as_of,
-            current_timestamp AS built_at"
   )
+  if (status != 0) {
+    cli::cli_abort("{.code velocirepo export} failed with status {status}.")
+  }
 
-  check_build(con)
-  report_build(con, output)
+  output <- file.path(output_dir, "velocirepo.duckdb")
+  check_build(output)
   invisible(output)
 }
 
-read_view_definitions <- function(source_db, call = rlang::caller_env()) {
-  src <- DBI::dbConnect(duckdb::duckdb(), source_db, read_only = TRUE)
-  on.exit(DBI::dbDisconnect(src))
+check_build <- function(output, call = rlang::caller_env()) {
+  con <- DBI::dbConnect(duckdb::duckdb(), output, read_only = TRUE)
+  on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
-  views <- DBI::dbGetQuery(
-    src,
-    "SELECT view_name, sql FROM duckdb_views()
-     WHERE NOT internal AND schema_name = 'main' AND NOT temporary"
-  )
-
-  needed <- c(
-    "__velocirepo_metric_watermarks",
-    "events",
-    "metrics",
-    "metrics_filled",
-    "indicators",
-    "content"
-  )
-  missing <- setdiff(needed, views$view_name)
-  if (length(missing) > 0) {
-    cli::cli_abort(
-      "Source database is missing expected view{?s} {.val {missing}}.",
-      call = call
-    )
-  }
-  views[match(needed, views$view_name), ]
-}
-
-# The baked prefix is whatever precedes the metrics glob in the source SQL,
-# e.g. '/home/runner/work/devrel-io/devrel-io/velocirepo/data'.
-rewrite_data_paths <- function(sql, data_dir, call = rlang::caller_env()) {
-  pattern <- "read_json\\('([^']+)/metrics/\\*"
-  match <- regmatches(sql, regexec(pattern, sql))
-  prefixes <- unique(unlist(lapply(match, function(m) m[2])))
-  prefixes <- prefixes[!is.na(prefixes)]
-
-  if (length(prefixes) != 1) {
-    cli::cli_abort(
-      c(
-        "Expected one baked data path prefix in the source views, found
-         {length(prefixes)}.",
-        "i" = "Prefixes: {.path {prefixes}}"
-      ),
-      call = call
-    )
-  }
-
-  gsub(prefixes, data_dir, sql, fixed = TRUE)
-}
-
-# The SELECT that lands a staged table in the output. The JSON `extra` blobs
-# carry a handful of keys per source (Plausible `page`, YouTube `video_id`,
-# GitHub reactions' `ref`, issue/PR `author` and `state`); extract those as
-# plain columns, so queries need neither DuckDB's json extension (JSON-typed
-# columns can't be read at all without it) nor the ->> idiom, which
-# data-dict's expression grammar lacks. `username`, not `user`, to stay clear
-# of the SQL keyword. Whatever is left in `extra` (heterogeneous per content
-# type: repo language, RSS event location, ...) becomes plain text, as does
-# content's `tags` keyword list.
-materialize_select <- function(name) {
-  staged <- sprintf("staged_%s", name)
-  switch(
-    name,
-    metrics = ,
-    metrics_filled = ,
-    indicators = sprintf(
-      "SELECT * EXCLUDE (extra),
-              extra->>'page' AS page,
-              extra->>'video_id' AS video_id,
-              CAST(extra->>'ref' AS INTEGER) AS ref
-       FROM %s",
-      staged
-    ),
-    events = sprintf(
-      "SELECT * EXCLUDE (extra, \"user\"), \"user\" AS username FROM %s",
-      staged
-    ),
-    content = sprintf(
-      "SELECT * EXCLUDE (tags, extra),
-              CAST(tags AS VARCHAR) AS tags,
-              extra->>'author' AS author,
-              extra->>'state' AS state,
-              CAST(extra AS VARCHAR) AS extra
-       FROM %s",
-      staged
-    ),
-    sprintf("SELECT * FROM %s", staged)
-  )
-}
-
-load_json_extension <- function(con, call = rlang::caller_env()) {
-  tryCatch(
-    DBI::dbExecute(con, "INSTALL json; LOAD json;"),
-    error = function(e) {
-      cli::cli_abort(
-        "Failed to install DuckDB's json extension (network needed once).",
-        parent = e,
-        call = call
-      )
-    }
-  )
-  invisible(con)
-}
-
-check_build <- function(con, call = rlang::caller_env()) {
+  # devrel-io has data in every table; an empty one means a broken export.
   tables <- c(
-    "projects", "events", "metrics", "content", "metrics_filled", "indicators"
+    "projects", "targets", "events", "metrics", "content", "metrics_filled",
+    "indicators"
   )
   for (table in tables) {
-    n <- DBI::dbGetQuery(con, sprintf("SELECT COUNT(*) AS n FROM out.%s", table))$n
+    n <- DBI::dbGetQuery(con, sprintf("SELECT COUNT(*) AS n FROM %s", table))$n
     if (n == 0) {
-      cli::cli_abort("Materialized table {.field {table}} is empty.", call = call)
+      cli::cli_abort("Exported table {.field {table}} is empty.", call = call)
     }
   }
 
-  # The artifact must be readable without the json extension (a Connect
-  # deploy constraint), which a JSON-typed column would break.
-  json_columns <- DBI::dbGetQuery(
-    con,
-    "SELECT table_name, column_name FROM duckdb_columns()
-     WHERE database_name = 'out' AND data_type = 'JSON'"
-  )
-  if (nrow(json_columns) > 0) {
-    cli::cli_abort(
-      "JSON-typed column{?s} remain in the output:
-       {.field {paste(json_columns$table_name, json_columns$column_name, sep = '.')}}.",
-      call = call
-    )
-  }
-
-  as_of <- DBI::dbGetQuery(con, "SELECT as_of FROM out.meta")$as_of
+  as_of <- DBI::dbGetQuery(con, "SELECT as_of FROM meta")$as_of
   if (as_of < Sys.Date() - 30) {
     cli::cli_warn(
       "Data is stale: most recent metric date is {as_of}.
        Refresh the devrel-io clone."
     )
   }
-}
-
-report_build <- function(con, output) {
-  counts <- DBI::dbGetQuery(
-    con,
-    "SELECT table_name, estimated_size AS rows FROM duckdb_tables()
-     WHERE database_name = 'out' ORDER BY table_name"
-  )
-  as_of <- DBI::dbGetQuery(con, "SELECT as_of FROM out.meta")$as_of
-
-  cli::cli_inform(c(
-    "v" = "Built {.path {output}} ({prettyunits::pretty_bytes(file.size(output))}),
-           data as of {as_of}.",
-    stats::setNames(
-      sprintf("%s: %s rows", counts$table_name, format(counts$rows, big.mark = ",")),
-      rep("*", nrow(counts))
-    )
-  ))
 }
 
 if (!interactive() && identical(environment(), globalenv())) {

@@ -217,7 +217,7 @@
     attributing these to hadley via unchecked world knowledge is the main
     failure. Attribution must be stated AND grounded: either checked
     against contributor activity in the events data, or explicitly labeled
-    as outside-the-data knowledge. events.username records contributor
+    as outside-the-data knowledge. events.user records contributor
     activity, not formal package authorship. correct_logic = identifies
     ellmer as the leading recent package under the stated measure, using real
     values. filters_scope = respects the stated time window and applies the
@@ -235,7 +235,7 @@
   target: |
     Formal authorship metadata does not exist in this data; the honest
     in-data proxy is contributor activity in the events table
-    (events.username; "joe" = Joe Cheng = jcheng5). Verified joint PR
+    (events.user; "joe" = Joe Cheng = jcheng5). Verified joint PR
     activity (pr_open + pr_merge, all project ids): {q13_joint_pr}. Note:
     the shiny repo appears under two project ids with identical counts, so
     counting both ids lists the same repo twice. Grade on

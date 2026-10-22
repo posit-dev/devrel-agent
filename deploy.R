@@ -16,9 +16,10 @@ rsconnect::deployApp(
     "agent-builder.R",
     "instructions.md",
     "_brand.yml",
-    "data/devrel.duckdb",
+    "data/velocirepo.duckdb",
+    "data/data-dict.yaml",
     list.files(
-      c("_assets", "_fonts", "commons-cache", "dictionaries"),
+      c("_assets", "_fonts", "commons-cache"),
       recursive = TRUE,
       full.names = TRUE
     )
