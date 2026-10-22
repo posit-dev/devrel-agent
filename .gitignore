@@ -6,3 +6,4 @@ evals/logs/*.jsonl
 .shinychat/
 commons-cache/
 rsconnect/**/*.dcf
+inst/devrel-io/

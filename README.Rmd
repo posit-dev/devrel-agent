@@ -114,13 +114,23 @@ eval_plot |>
 
 The agent analyzes the [devrel-io](https://github.com/posit-dev/devrel-io) data, which is an automated collection of devrel metrics. devrel-io is built with [posit-dev/velocirepo](https://github.com/posit-dev/velocirepo), a more general data synthesis software.
 
-## Refresh the data
+## Run it locally
 
-The agent reads `data/velocirepo.duckdb` and its data dictionary, `data/data-dict.yaml`. Both come from a clone of devrel-io in `inst/devrel-io`, exported by velocirepo (1.2.0 or later):
+These steps are for running the agent on your own machine. The deployed app on Connect Cloud is published with `deploy.R`.
+
+The agent reads `data/velocirepo.duckdb` and its data dictionary, `data/data-dict.yaml`. Both come from a clone of devrel-io in `inst/devrel-io`, exported by [velocirepo](https://posit-dev.github.io/velocirepo/user-guide/installation.html) (1.2.0 or later):
 
 ```bash
-git -C inst/devrel-io pull
+git clone --depth 1 https://github.com/posit-dev/devrel-io inst/devrel-io
 velocirepo --config inst/devrel-io/velocirepo.toml export data --data-dict
 ```
 
-velocirepo writes the dictionary from the schema, the data and the `[data_dict]` section of devrel-io's `velocirepo.toml`. Caveats about the data belong in that section, so they reach the dictionary at the next export.
+To refresh the data later, run `git -C inst/devrel-io pull` and the export again. velocirepo writes the dictionary from the schema, the data and the `[data_dict]` section of devrel-io's `velocirepo.toml`. Caveats about the data belong in that section, so they reach the dictionary at the next export.
+
+Then, in R, from the repository's root, install the packages the app needs, read your OpenAI API key from `.env` (a line `OPENAI_API_KEY=...`), and start the app:
+
+```r
+pak::local_install_deps()
+readRenviron(".env")
+shiny::runApp()
+```
