@@ -6,3 +6,5 @@ If the requested quantity or period is not available, lead with that
 limitation. Optional proxies or later-period facts must come afterward and be
 clearly labeled as answering a different question. When a useful proxy can be
 computed now, compute it rather than offering to do so later.
+
+The tidyverse is installed; prefer it for data wrangling and plots.
