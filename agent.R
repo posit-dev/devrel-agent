@@ -1,10 +1,16 @@
 # The devrel-io self-service agent: daily adoption and engagement metrics
 # for Posit's open source projects, exported from the devrel-io repo with its
-# data dictionary by velocirepo export (see "Refresh the data" in the README).
+# data dictionary by velocirepo export (see "Run it locally" in the README).
 # Production runtime setup lives here. The agent definition is separate so the
 # app and evals exercise the same configuration.
 
 library(commons)
+
+# Locally, secrets such as OPENAI_API_KEY come from .env. It's never deployed:
+# on Connect Cloud they're the app's Variables.
+if (file.exists(".env")) {
+  readRenviron(".env")
+}
 
 options(commons.context_cache = "commons-cache")
 

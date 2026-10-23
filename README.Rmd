@@ -127,10 +127,11 @@ velocirepo --config inst/devrel-io/velocirepo.toml export data --data-dict
 
 To refresh the data later, run `git -C inst/devrel-io pull` and the export again. velocirepo writes the dictionary from the schema, the data and the `[data_dict]` section of devrel-io's `velocirepo.toml`. Caveats about the data belong in that section, so they reach the dictionary at the next export.
 
-Then, in R, from the repository's root, install the packages the app needs, read your OpenAI API key from `.env` (a line `OPENAI_API_KEY=...`), and start the app:
+Put your OpenAI API key in `.env`, in the repository's root, as a line `OPENAI_API_KEY=...`; the app reads it when it starts. Then, in R, from the repository's root, install the packages the app needs and start the app:
 
 ```r
 pak::local_install_deps()
-readRenviron(".env")
 shiny::runApp()
 ```
+
+To deploy from your laptop, add the Connect Cloud client credentials to `.env` too (`CONNECT_CLOUD_CLIENT_ID=...` and `CONNECT_CLOUD_CLIENT_SECRET=...`, and `CONNECT_CLOUD_APP_ID=...` once the app exists), install rsconnect, and run `Rscript deploy.R`. `.env` is never deployed.
