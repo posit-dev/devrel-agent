@@ -70,7 +70,7 @@ rsconnect::deployApp(
   ),
   appId = if (nzchar(app_id)) app_id,
   appName = "devrel-agent",
-  appTitle = "devrel agent",
+  appTitle = "DevRel Agent",
   account = account,
   server = "connect.posit.cloud",
   forceUpdate = TRUE
