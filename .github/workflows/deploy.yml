@@ -64,9 +64,12 @@ jobs:
         with:
           use-public-rspm: true
 
+      # cpp11 is only needed to build some dependencies from source, so the
+      # binaries don't bring it, but rsconnect's dependency snapshot (renv)
+      # refuses to run without it.
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rsconnect, any::withr
+          extra-packages: any::rsconnect, any::withr, any::cpp11
 
       - name: Deploy
         env:
