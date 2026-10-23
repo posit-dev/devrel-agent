@@ -39,6 +39,17 @@ if (identical(Sys.getenv("DEVREL_DEPLOY"), "false")) {
   quit(save = "no")
 }
 
+# Every deploy sends the app's variables, and Connect Cloud replaces the app's
+# variables with them: rsconnect sends an empty list without envVars, which
+# removes OPENAI_API_KEY. So the key is required here, from .env or the
+# repository secret.
+if (!nzchar(Sys.getenv("OPENAI_API_KEY"))) {
+  cli::cli_abort(c(
+    "{.envvar OPENAI_API_KEY} isn't set.",
+    i = "Deploying without it would remove it from the app on Connect Cloud."
+  ))
+}
+
 # In CI, log in with the Connect Cloud client credentials of the repository
 # secrets; locally, rsconnect uses the account it already has.
 if (nzchar(Sys.getenv("CONNECT_CLOUD_CLIENT_ID"))) {
@@ -49,8 +60,6 @@ if (nzchar(Sys.getenv("CONNECT_CLOUD_CLIENT_ID"))) {
   )
 }
 
-# OPENAI_API_KEY is set in the app's Content Settings on Connect Cloud, so
-# it never passes through the machine that deploys.
 rsconnect::deployApp(
   appPrimaryDoc = "app.R",
   appFiles = c(
@@ -73,6 +82,7 @@ rsconnect::deployApp(
   appTitle = "DevRel Agent",
   account = account,
   server = "connect.posit.cloud",
+  envVars = "OPENAI_API_KEY",
   forceUpdate = TRUE
 )
 
@@ -81,7 +91,6 @@ if (!nzchar(app_id)) {
   new_id <- if ("appId" %in% names(created)) created$appId[[1]] else "(see the URL)"
   cli::cli_inform(c(
     "v" = "Created the app {.val {new_id}} at {.url {created$url[[1]]}}.",
-    i = "Set its id as the repository variable: {.code gh variable set CONNECT_CLOUD_APP_ID --body <id>}",
-    i = "And add OPENAI_API_KEY to the app's Variables on Connect Cloud."
+    i = "Set its id as the repository variable: {.code gh variable set CONNECT_CLOUD_APP_ID --body <id>}"
   ))
 }
