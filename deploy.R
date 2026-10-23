@@ -5,6 +5,19 @@
 
 withr::local_options(rsconnect.python.enabled = FALSE)
 
+# The Connect Cloud account the app is published to, and the app's id there:
+# the repository variable CONNECT_CLOUD_APP_ID in CI. Without an id, a new app
+# is created, which only a run started by hand may do: a nightly run would
+# create one every night.
+account <- "jeroenjanssens"
+app_id <- Sys.getenv("CONNECT_CLOUD_APP_ID")
+if (!nzchar(app_id) && identical(Sys.getenv("GITHUB_EVENT_NAME"), "schedule")) {
+  cli::cli_abort(c(
+    "{.envvar CONNECT_CLOUD_APP_ID} isn't set, so this run would create a new app.",
+    i = "Deploy once by hand, then set the repository variable to the app's id."
+  ))
+}
+
 source("agent.R")
 
 # A stale database means devrel-io's nightly fetch stopped: don't deploy, so
@@ -32,7 +45,7 @@ if (nzchar(Sys.getenv("CONNECT_CLOUD_CLIENT_ID"))) {
   rsconnect::connectCloudClientCredentials(
     clientId = Sys.getenv("CONNECT_CLOUD_CLIENT_ID"),
     clientSecret = Sys.getenv("CONNECT_CLOUD_CLIENT_SECRET"),
-    accountName = "posit"
+    accountName = account
   )
 }
 
@@ -55,8 +68,20 @@ rsconnect::deployApp(
       full.names = TRUE
     )
   ),
-  appId = "01a043bd-5dee-7f82-917c-531eec503648",
-  account = "posit",
+  appId = if (nzchar(app_id)) app_id,
+  appName = "devrel-agent",
+  appTitle = "devrel agent",
+  account = account,
   server = "connect.posit.cloud",
   forceUpdate = TRUE
 )
+
+if (!nzchar(app_id)) {
+  created <- rsconnect::deployments(".", accountFilter = account, serverFilter = "connect.posit.cloud")
+  new_id <- if ("appId" %in% names(created)) created$appId[[1]] else "(see the URL)"
+  cli::cli_inform(c(
+    "v" = "Created the app {.val {new_id}} at {.url {created$url[[1]]}}.",
+    i = "Set its id as the repository variable: {.code gh variable set CONNECT_CLOUD_APP_ID --body <id>}",
+    i = "And add OPENAI_API_KEY to the app's Variables on Connect Cloud."
+  ))
+}
