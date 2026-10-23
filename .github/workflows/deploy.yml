@@ -76,6 +76,9 @@ jobs:
           DEVREL_DEPLOY: ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.deploy)) && 'true' || 'false' }}
           CONNECT_CLOUD_CLIENT_ID: ${{ secrets.CONNECT_CLOUD_CLIENT_ID }}
           CONNECT_CLOUD_CLIENT_SECRET: ${{ secrets.CONNECT_CLOUD_CLIENT_SECRET }}
+          # Sent with every deploy: Connect Cloud replaces the app's variables
+          # with the ones a deploy sends.
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # The app to update; unset for the first deploy, which creates it.
           CONNECT_CLOUD_APP_ID: ${{ vars.CONNECT_CLOUD_APP_ID }}
         run: Rscript deploy.R
