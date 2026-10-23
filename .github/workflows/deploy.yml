@@ -64,12 +64,22 @@ jobs:
         with:
           use-public-rspm: true
 
-      # cpp11 is only needed to build some dependencies from source, so the
-      # binaries don't bring it, but rsconnect's dependency snapshot (renv)
-      # refuses to run without it.
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rsconnect, any::withr, any::cpp11
+          extra-packages: any::rsconnect, any::withr
+
+      # rsconnect's dependency snapshot (renv) refuses to run when a package
+      # that a dependency compiles with (LinkingTo), such as cpp11 or
+      # progress, isn't installed; the binaries installed above don't bring
+      # them.
+      - name: Install what the dependencies compile with
+        run: |
+          Rscript -e '
+            ip <- installed.packages()
+            linking_to <- unique(unlist(tools::package_dependencies(rownames(ip), db = ip, which = "LinkingTo")))
+            missing <- setdiff(linking_to, rownames(ip))
+            message("Installing: ", paste(missing, collapse = ", "))
+            if (length(missing) > 0) install.packages(missing)'
 
       - name: Deploy
         env:
