@@ -5,10 +5,12 @@
 
 withr::local_options(rsconnect.python.enabled = FALSE)
 
+source("agent.R")
+
 # The Connect Cloud account the app is published to, and the app's id there:
-# the repository variable CONNECT_CLOUD_APP_ID in CI. Without an id, a new app
-# is created, which only a run started by hand may do: a nightly run would
-# create one every night.
+# the repository variable CONNECT_CLOUD_APP_ID in CI, or a line in .env,
+# which agent.R reads. Without an id, a new app is created, which only a run
+# started by hand may do: a nightly run would create one every night.
 account <- "jeroenjanssens"
 app_id <- Sys.getenv("CONNECT_CLOUD_APP_ID")
 if (!nzchar(app_id) && identical(Sys.getenv("GITHUB_EVENT_NAME"), "schedule")) {
@@ -17,8 +19,6 @@ if (!nzchar(app_id) && identical(Sys.getenv("GITHUB_EVENT_NAME"), "schedule")) {
     i = "Deploy once by hand, then set the repository variable to the app's id."
   ))
 }
-
-source("agent.R")
 
 # A stale database means devrel-io's nightly fetch stopped: don't deploy, so
 # that the failure gets noticed. The running version has the same data.
