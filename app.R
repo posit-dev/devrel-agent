@@ -25,7 +25,19 @@ welcome_message <- paste0(
   "- <span class='suggestion'>Why would I use air?</span>\n"
 )
 
-ui <- shinychat::page_chat(
+# Plausible analytics
+plausible_head <- tags$head(
+  tags$script(
+    async = NA,
+    src = "https://plausible.io/js/pa-zn5gWwHjlXsuZHJL1rHh9.js"
+  ),
+  tags$script(HTML(
+    "window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()"
+  ))
+)
+
+ui <- tagList(plausible_head, shinychat::page_chat(
   title = list(
     tags$span(
       style = "display: inline-flex; align-items: center; gap: 0.65rem;",
@@ -42,7 +54,7 @@ ui <- shinychat::page_chat(
   window_title = "DevRel Agent",
   theme = commons::commons_theme(brand = TRUE),
   greeting = welcome_message
-)
+))
 
 server <- function(input, output, session) {
   # One agent per session: a shared agent would interleave concurrent
